@@ -1,4 +1,4 @@
-#python -m venv .venv
+#python -m venv venv
 #pip install flask
 #pip install mysqlclient
 #pip install flask-mysqldb
