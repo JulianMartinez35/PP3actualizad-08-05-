@@ -1,0 +1,62 @@
+{% include("cabecera.html") %}
+
+<!-- FORMULARIO DE REGISTRO -->
+<div class="caja">
+    <form class="form-control" action="crear-registro" method="post">
+        <h1 class="text-center t">Registro</h1>
+
+        {% if mensaje %}
+            <div class="alert alert-danger" role="alert">
+                {{ mensaje }}
+            </div>
+        {% endif %}
+
+        {% if mensaje2 %}
+            <div class="alert alert-success" role="alert">
+                {{ mensaje2 }}
+            </div>
+        {% endif %}
+
+        <div class="form-group">
+            <label for="exampleInputEmail1" class="t text-center">Correo</label>
+            <input type="email" class="form-control" id="exampleInputEmail1" placeholder="Ingrese su Correo" name="txtCorreo" required>
+        </div>
+        <br>
+
+        <div class="form-group">
+            <label for="exampleInputPassword1" class="t text-center">Contraseña</label>
+            <input type="password" class="form-control" id="exampleInputPassword1" placeholder="Ingrese su Contraseña" name="txtPassword" required>
+        </div>
+        <br>
+
+        <div class="form-group">
+            <label for="exampleInputPassword2" class="t text-center">Confirmar Contraseña</label>
+            <input type="password" class="form-control" id="exampleInputPassword2" placeholder="Repita su Contraseña" name="txtConfirmPassword" required>
+        </div>
+        <br>
+
+        <div class="form-group">
+            <label for="pregunta_seguridad" class="t text-center">Pregunta de seguridad</label>
+            <select class="form-control" name="pregunta_seguridad" required>
+                <option value="">Seleccione una pregunta</option>
+                <option value="mascota">¿Cuál es el nombre de tu mascota favorita?</option>
+                <option value="ciudad">¿En qué ciudad naciste?</option>
+                <option value="profesor">¿Cuál es el apellido de tu primer profesor?</option>
+                <option value="escuela">¿Cómo se llamaba tu escuela primaria?</option>
+            </select>
+        </div>
+        <br>
+
+        <div class="form-group">
+            <label for="respuesta_seguridad" class="t text-center">Respuesta</label>
+            <input type="text" class="form-control" name="respuesta_seguridad" placeholder="Respuesta a la pregunta seleccionada" required>
+        </div>
+        <br>
+
+        <div class="text-center">
+            <button type="submit" class="btn btn-success">Registrar</button>
+        </div>
+    </form>
+</div>
+<!-- FIN -->
+

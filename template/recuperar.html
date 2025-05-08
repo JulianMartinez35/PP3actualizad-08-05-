@@ -1,0 +1,61 @@
+{% include('cabecera.html') %}
+
+<div class="caja">
+    <form class="form-control" action="/recuperar" method="post">
+        <h1 class="text-center t">Recuperar Contraseña</h1>
+
+        {% if mensaje %}
+            <div class="alert alert-danger" role="alert">
+                {{ mensaje }}
+            </div>
+        {% endif %}
+
+        {% if mensaje2 %}
+            <div class="alert alert-success" role="alert">
+                {{ mensaje2 }}
+            </div>
+        {% endif %}
+
+        <div class="form-group">
+            <label for="correo" class="t text-center">Correo</label>
+            <input type="email" class="form-control" id="correo" name="correo" placeholder="Ingrese su correo" required>
+        </div>
+        <br>
+
+        <div class="form-group">
+            <label for="pregunta_seguridad" class="t text-center">Pregunta de seguridad</label>
+            <select class="form-control" name="pregunta_seguridad" required>
+                <option value="">Seleccione una pregunta</option>
+                <option value="mascota">¿Cuál es el nombre de tu mascota favorita?</option>
+                <option value="ciudad">¿En qué ciudad naciste?</option>
+                <option value="profesor">¿Cuál es el apellido de tu primer profesor?</option>
+                <option value="escuela">¿Cómo se llamaba tu escuela primaria?</option>
+            </select>
+        </div>
+        <br>
+
+        <div class="form-group">
+            <label for="respuesta_seguridad" class="t text-center">Respuesta</label>
+            <input type="text" class="form-control" name="respuesta_seguridad" placeholder="Ingrese su respuesta" required>
+        </div>
+        <br>
+
+        <div class="form-group">
+            <label for="nueva_password" class="t text-center">Nueva Contraseña</label>
+            <input type="password" class="form-control" name="nueva_password" placeholder="Ingrese nueva contraseña" required>
+        </div>
+        <br>
+
+        <div class="form-group">
+            <label for="confirmar_password" class="t text-center">Confirmar Nueva Contraseña</label>
+            <input type="password" class="form-control" name="confirmar_password" placeholder="Confirme la nueva contraseña" required>
+        </div>
+        <br><br>
+
+        <div class="text-center">
+            <button type="submit" class="btn btn-primary">Actualizar Contraseña</button>
+        </div>
+    </form>
+</div>
+
+
