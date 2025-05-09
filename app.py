@@ -19,9 +19,9 @@ app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 
 mysql = MySQL(app)
 
-# ==============================
+# =============================
 # RUTAS PRINCIPALES
-# ==============================
+# =============================
 
 @app.route('/')
 def home():
