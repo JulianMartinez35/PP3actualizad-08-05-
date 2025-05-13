@@ -178,6 +178,24 @@ def logout():
 # ==============================
 # EJECUCIÓN DE LA APP
 # ==============================
+@app.route('/cargar-producto', methods=['POST'])
+def cargar_producto():
+    nombre = request.form['nombre']
+    descripcion = request.form['descripcion']
+    color = request.form['color']
+    talle = request.form['talle']
+    stock = int(request.form['stock'])
+    precio = float(request.form['precio'])
+
+    foto = request.files['foto']
+    filename = secure_filename(foto.filename)
+    ruta_foto = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    foto.save(ruta_foto)
+
+    # Lógica para guardar en base de datos (próximo paso)
+
+    print(f"Producto guardado: {nombre}, {descripcion}, {color}, {talle}, {stock}, {precio}, {filename}")
+    return redirect(url_for('admin'))
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)
