@@ -1,16 +1,31 @@
-{% include("usuariocabecera.html") %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <style>
+{% include "usuariocabecera.html" %}
 
-    </style>
-</head>
-<body>
-    <h1>BIENVENIDO</h1>
-</body>
-</html>
+<div class="container my-5">
+    <h2 class="text-center text-uppercase mb-4">Catálogo de Productos</h2>
+
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+        {% for producto in productos %}
+            <div class="col">
+                <div class="card h-100 shadow-sm rounded-4">
+                    <img src="{{ url_for('static', filename='imagenes_productos/' ~ producto.imagen) }}"
+                         class="card-img-top"
+                         style="object-fit: cover; height: 250px; border-top-left-radius: 1rem; border-top-right-radius: 1rem;"
+                         alt="Imagen del producto {{ producto.nombre }}">
+
+                    <div class="card-body">
+                        <h5 class="card-title text-uppercase">{{ producto.nombre }}</h5>
+                        <p class="card-text">{{ producto.descripcion }}</p>
+                        <p class="card-text"><strong>Precio:</strong> ${{ producto.precio }}</p>
+                        <p class="card-text"><strong>Talle:</strong> {{ producto.talle }}</p>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <strong>Color:</strong>
+                            <div style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid #ccc; background-color: {{ producto.color }};"></div>
+                            <span class="text-muted small">{{ producto.color }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>

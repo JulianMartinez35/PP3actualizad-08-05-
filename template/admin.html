@@ -1,83 +1,61 @@
 {% include 'admincabecera.html' %}
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Cargar Producto</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f0f2f5;
-        }
 
-        .form-box {
-            max-width: 650px;
-            margin: 50px auto;
-            background-color: #ffffff;
-            border-radius: 15px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-            padding: 30px 40px;
-        }
+<div class="container my-5">
+    <h2 class="text-center text-uppercase mb-4">Cargar nuevo producto</h2>
 
-        .form-box h2 {
-            text-align: center;
-            margin-bottom: 25px;
-            color: #333;
-        }
-
-        .form-label {
-            font-weight: 500;
-        }
-
-        .btn-primary {
-            width: 100%;
-        }
-    </style>
-</head>
-<body>
-
-<div class="form-box">
-    <h2>Agregar nuevo producto</h2>
-    <form action="{{ url_for('cargar_producto') }}" method="POST" enctype="multipart/form-data">
-
+    <form action="{{ url_for('cargar_producto') }}" method="POST" enctype="multipart/form-data" class="p-4 shadow rounded-4 bg-light">
         <div class="mb-3">
-            <label for="nombre" class="form-label">Nombre del producto</label>
-            <input type="text" class="form-control" id="nombre" name="nombre" required>
+            <label for="nombre" class="form-label">Nombre</label>
+            <input type="text" name="nombre" class="form-control" required>
         </div>
 
         <div class="mb-3">
             <label for="descripcion" class="form-label">Descripción</label>
-            <textarea class="form-control" id="descripcion" name="descripcion" rows="3" required></textarea>
+            <textarea name="descripcion" class="form-control" required></textarea>
         </div>
 
         <div class="mb-3">
-            <label for="foto" class="form-label">Foto</label>
-            <input type="file" class="form-control" id="foto" name="foto" accept="image/*" required>
+            <label for="precio" class="form-label">Precio</label>
+            <input type="number" name="precio" step="0.01" class="form-control" required>
         </div>
 
         <div class="mb-3">
             <label for="color" class="form-label">Color</label>
-            <input type="text" class="form-control" id="color" name="color" required>
+            <div class="d-flex align-items-center gap-3">
+                <input type="text" name="color" id="colorTexto" class="form-control" placeholder="Ej. rojo, azul" required>
+                <input type="color" id="colorPicker" class="form-control form-control-color" value="#000000" title="Elegir color">
+                <div id="colorPreview" style="width: 30px; height: 30px; border: 1px solid #ccc; border-radius: 50%;"></div>
+            </div>
         </div>
 
         <div class="mb-3">
             <label for="talle" class="form-label">Talle</label>
-            <input type="text" class="form-control" id="talle" name="talle" required>
+            <input type="text" name="talle" class="form-control" placeholder="Ej. S, M, L, 38, 40" required>
         </div>
 
         <div class="mb-3">
-            <label for="stock" class="form-label">Stock</label>
-            <input type="number" class="form-control" id="stock" name="stock" min="0" required>
+            <label for="imagen" class="form-label">Imagen del producto</label>
+            <input type="file" name="imagen" accept="image/*" class="form-control" required>
         </div>
 
-        <div class="mb-4">
-            <label for="precio" class="form-label">Precio</label>
-            <input type="number" class="form-control" id="precio" name="precio" step="0.01" min="0" required>
+        <div class="text-end">
+            <button type="submit" class="btn btn-dark rounded-pill">Cargar producto</button>
         </div>
-
-        <button type="submit" class="btn btn-primary">Guardar producto</button>
     </form>
 </div>
 
-</body>
-</html>
+<script>
+    // Cuando el color se cambia, se refleja en el preview y el texto
+    const colorPicker = document.getElementById("colorPicker");
+    const colorTexto = document.getElementById("colorTexto");
+    const colorPreview = document.getElementById("colorPreview");
+
+    colorPicker.addEventListener("input", function () {
+        colorPreview.style.backgroundColor = colorPicker.value;
+        colorTexto.value = colorPicker.value;
+    });
+
+    colorTexto.addEventListener("input", function () {
+        colorPreview.style.backgroundColor = colorTexto.value;
+    });
+</script>

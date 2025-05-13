@@ -5,6 +5,9 @@
 
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_mysqldb import MySQL, MySQLdb
+import os
+from werkzeug.utils import secure_filename
+
 
 # Configuración general
 app = Flask(__name__, template_folder='template')
@@ -79,7 +82,7 @@ def login():
 
 # ==============================
 # REGISTRO
-# ==============================
+# ============================
 
 @app.route('/crear-registro', methods=["POST"])
 def crear_registro():
@@ -163,8 +166,13 @@ def admin():
 @app.route('/usuario')
 def usuario():
     if 'logueado' in session and session['id_rol'] == 2:
-        return render_template('usuario.html')
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT * FROM productos")
+        productos = cur.fetchall()
+        cur.close()
+        return render_template('usuario.html', productos=productos)
     return redirect(url_for('home'))
+
 
 # ==============================
 # CERRAR SESIÓN
@@ -175,27 +183,44 @@ def logout():
     session.clear()
     return redirect(url_for('home'))
 
+#CARGAR PRODUCTOS
+
+# Carpeta para subir imágenes
+UPLOAD_FOLDER = 'static/imagenes_productos'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+@app.route('/cargar-producto', methods=['POST'])
+def cargar_producto():
+    if 'logueado' in session and session['id_rol'] == 1:
+        nombre = request.form['nombre']
+        descripcion = request.form['descripcion']
+        precio = request.form['precio']
+        color = request.form['color']
+        talle = request.form['talle']
+        imagen = request.files['imagen']
+
+        if imagen:
+            filename = secure_filename(imagen.filename)
+            imagen_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            imagen.save(imagen_path)
+
+            cur = mysql.connection.cursor()
+            cur.execute("""
+                INSERT INTO productos (nombre, descripcion, precio, color, talle, imagen)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (nombre, descripcion, precio, color, talle, filename))
+            mysql.connection.commit()
+            cur.close()
+
+        return redirect(url_for('admin'))
+
+    return redirect(url_for('home'))
+
+
+
 # ==============================
 # EJECUCIÓN DE LA APP
 # ==============================
-@app.route('/cargar-producto', methods=['POST'])
-def cargar_producto():
-    nombre = request.form['nombre']
-    descripcion = request.form['descripcion']
-    color = request.form['color']
-    talle = request.form['talle']
-    stock = int(request.form['stock'])
-    precio = float(request.form['precio'])
-
-    foto = request.files['foto']
-    filename = secure_filename(foto.filename)
-    ruta_foto = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    foto.save(ruta_foto)
-
-    # Lógica para guardar en base de datos (próximo paso)
-
-    print(f"Producto guardado: {nombre}, {descripcion}, {color}, {talle}, {stock}, {precio}, {filename}")
-    return redirect(url_for('admin'))
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)
