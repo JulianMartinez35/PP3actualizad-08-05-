@@ -6,36 +6,36 @@
     <form action="{{ url_for('cargar_producto') }}" method="POST" enctype="multipart/form-data" class="p-4 shadow rounded-4 bg-light">
         <div class="mb-3">
             <label for="nombre" class="form-label">Nombre</label>
-            <input type="text" name="nombre" class="form-control" required>
+            <input type="text" id="nombre" name="nombre" class="form-control" required>
         </div>
 
         <div class="mb-3">
             <label for="descripcion" class="form-label">Descripción</label>
-            <textarea name="descripcion" class="form-control" required></textarea>
+            <textarea id="descripcion" name="descripcion" class="form-control" rows="3" required></textarea>
         </div>
 
         <div class="mb-3">
             <label for="precio" class="form-label">Precio</label>
-            <input type="number" name="precio" step="0.01" class="form-control" required>
+            <input type="number" id="precio" name="precio" step="0.01" class="form-control" min="0" required>
         </div>
 
         <div class="mb-3">
-            <label for="color" class="form-label">Color</label>
+            <label for="colorTexto" class="form-label">Color</label>
             <div class="d-flex align-items-center gap-3">
-                <input type="text" name="color" id="colorTexto" class="form-control" placeholder="Ej. rojo, azul" required>
+                <input type="text" name="color" id="colorTexto" class="form-control" placeholder="Ej. rojo, azul o #ff0000" required>
                 <input type="color" id="colorPicker" class="form-control form-control-color" value="#000000" title="Elegir color">
-                <div id="colorPreview" style="width: 30px; height: 30px; border: 1px solid #ccc; border-radius: 50%;"></div>
+                <div id="colorPreview" style="width: 30px; height: 30px; border: 1px solid #ccc; border-radius: 50%; background-color: #000000;"></div>
             </div>
         </div>
 
         <div class="mb-3">
             <label for="talle" class="form-label">Talle</label>
-            <input type="text" name="talle" class="form-control" placeholder="Ej. S, M, L, 38, 40" required>
+            <input type="text" id="talle" name="talle" class="form-control" placeholder="Ej. S, M, L, 38, 40" required>
         </div>
 
         <div class="mb-3">
             <label for="imagen" class="form-label">Imagen del producto</label>
-            <input type="file" name="imagen" accept="image/*" class="form-control" required>
+            <input type="file" id="imagen" name="imagen" accept="image/*" class="form-control" required>
         </div>
 
         <div class="text-end">
@@ -45,11 +45,11 @@
 </div>
 
 <script>
-    // Cuando el color se cambia, se refleja en el preview y el texto
     const colorPicker = document.getElementById("colorPicker");
     const colorTexto = document.getElementById("colorTexto");
     const colorPreview = document.getElementById("colorPreview");
 
+    // Sincroniza el input de texto con el picker y preview
     colorPicker.addEventListener("input", function () {
         colorPreview.style.backgroundColor = colorPicker.value;
         colorTexto.value = colorPicker.value;
@@ -59,3 +59,4 @@
         colorPreview.style.backgroundColor = colorTexto.value;
     });
 </script>
+
