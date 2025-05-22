@@ -217,6 +217,55 @@ def cargar_producto():
 
     return redirect(url_for('home'))
 
+#AGREGAR CARRITO
+
+@app.route('/agregar-carrito/<int:id_producto>', methods=['POST'])
+def agregar_carrito(id_producto):
+    if 'logueado' in session and session['id_rol'] == 2:
+        cantidad = int(request.form.get('cantidad', 1))
+        id_usuario = session['id']
+        
+        cur = mysql.connection.cursor()
+        # Verificar si ya existe el producto en el carrito
+        cur.execute("SELECT * FROM carrito WHERE id_usuario = %s AND id_producto = %s", (id_usuario, id_producto))
+        existente = cur.fetchone()
+
+        if existente:
+            # Si ya está en el carrito, actualizamos la cantidad
+            cur.execute("UPDATE carrito SET cantidad = cantidad + %s WHERE id_usuario = %s AND id_producto = %s",
+                        (cantidad, id_usuario, id_producto))
+        else:
+            # Si no está, lo insertamos
+            cur.execute("INSERT INTO carrito (id_usuario, id_producto, cantidad) VALUES (%s, %s, %s)",
+                        (id_usuario, id_producto, cantidad))
+        
+        mysql.connection.commit()
+        cur.close()
+        return redirect(url_for('usuario'))
+    return redirect(url_for('login'))
+
+
+#VISTA CARRITO
+
+@app.route('/carrito')
+def ver_carrito():
+    if 'logueado' in session and session['id_rol'] == 2:
+        id_usuario = session['id']
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            SELECT c.id, p.nombre, p.precio, p.imagen, c.cantidad
+            FROM carrito c
+            JOIN productos p ON c.id_producto = p.id
+            WHERE c.id_usuario = %s
+        """, (id_usuario,))
+        items = cur.fetchall()
+        cur.close()
+
+        total = sum(item['precio'] * item['cantidad'] for item in items)
+        return render_template('carrito.html', items=items, total=total)
+    return redirect(url_for('login'))
+
+
 
 
 

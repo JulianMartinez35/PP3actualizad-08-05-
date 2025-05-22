@@ -1,0 +1,35 @@
+{% include "usuariocabecera.html" %}
+
+<div class="container my-5">
+    <h2 class="text-center">Tu carrito</h2>
+    {% if items %}
+        <table class="table table-bordered mt-4">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Imagen</th>
+                    <th>Cantidad</th>
+                    <th>Precio</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.nombre }}</td>
+                    <td><img src="{{ url_for('static', filename='imagenes_productos/' ~ item.imagen) }}" width="50"></td>
+                    <td>{{ item.cantidad }}</td>
+                    <td>${{ item.precio }}</td>
+                    <td>${{ item.precio * item.cantidad }}</td>
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td colspan="4" class="text-end"><strong>Total:</strong></td>
+                    <td><strong>${{ total }}</strong></td>
+                </tr>
+            </tbody>
+        </table>
+    {% else %}
+        <p class="text-center mt-5">Tu carrito está vacío.</p>
+    {% endif %}
+</div>

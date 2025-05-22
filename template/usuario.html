@@ -5,34 +5,42 @@
 
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
         {% for producto in productos %}
-            <div class="col">
-                <div class="card h-100 shadow-sm rounded-4">
-                    <img src="{{ url_for('static', filename='imagenes_productos/' ~ producto.imagen) }}"
-                         class="card-img-top"
-                         style="object-fit: cover; height: 250px; border-top-left-radius: 1rem; border-top-right-radius: 1rem;"
-                         alt="Imagen del producto {{ producto.nombre }}">
+        <div class="col">
+            <div class="card h-100 shadow-sm rounded-4">
+                <img src="{{ url_for('static', filename='imagenes_productos/' ~ producto.imagen) }}"
+                     class="card-img-top"
+                     style="object-fit: cover; height: 250px; border-top-left-radius: 1rem; border-top-right-radius: 1rem;"
+                     alt="Imagen del producto {{ producto.nombre }}">
 
-                    <div class="card-body">
-                        <h5 class="card-title text-uppercase">{{ producto.nombre }}</h5>
-                        <p class="card-text">{{ producto.descripcion }}</p>
-                        <p class="card-text"><strong>Precio:</strong> ${{ producto.precio }}</p>
-                        <p class="card-text"><strong>Talle:</strong> {{ producto.talle }}</p>
-                        <p class="card-text"><strong>Color:</strong> {{ producto.color }}</p>
-                        <p class="card-text">
-                            <strong>Stock:</strong>
-                            {% if producto.stock > 0 %}
-                                {{ producto.stock }} disponibles
-                            {% else %}
-                                <span class="text-danger">Sin stock</span>
-                            {% endif %}
-                        </p>
+                <div class="card-body">
+                    <h5 class="card-title text-uppercase">{{ producto.nombre }}</h5>
+                    <p class="card-text">{{ producto.descripcion }}</p>
+                    <p class="card-text"><strong>Precio:</strong> ${{ producto.precio }}</p>
+                    <p class="card-text"><strong>Talle:</strong> {{ producto.talle }}</p>
+                    <p class="card-text"><strong>Color:</strong> {{ producto.color }}</p>
+                    <p class="card-text">
+                        <strong>Stock:</strong>
+                        {% if producto.stock > 0 %}
+                            {{ producto.stock }} disponibles
+                        {% else %}
+                            <span class="text-danger">Sin stock</span>
+                        {% endif %}
+                    </p>
 
-                        <div class="text-end">
-                            <button type="button" class="btn btn-primary">Comprar</button>
+                    {% if producto.stock > 0 %}
+                    <form action="{{ url_for('agregar_carrito', id_producto=producto.id) }}" method="POST">
+                        <div class="input-group mb-2">
+                            <input type="number" name="cantidad" class="form-control" value="1" min="1" max="{{ producto.stock }}" required>
+                            <button type="submit" class="btn btn-success">Agregar al carrito</button>
                         </div>
-                    </div>
+                    </form>
+                    {% else %}
+                    <button class="btn btn-secondary w-100" disabled>Sin stock</button>
+                    {% endif %}
                 </div>
             </div>
+        </div>
         {% endfor %}
     </div>
 </div>
+
