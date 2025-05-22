@@ -262,10 +262,34 @@ def ver_carrito():
         cur.close()
 
         total = sum(item['precio'] * item['cantidad'] for item in items)
-        return render_template('carrito.html', items=items, total=total)
+        total_cantidad = sum(item['cantidad'] for item in items)
+
+        return render_template('carrito.html', items=items, total=total, total_cantidad=total_cantidad)
     return redirect(url_for('login'))
 
 
+#ELIMINAR CARRITO
+@app.route('/eliminar_del_carrito', methods=['POST'])
+def eliminar_del_carrito():
+    if 'logueado' in session and session['id_rol'] == 2:
+        id_carrito = request.form['id']
+        cur = mysql.connection.cursor()
+        cur.execute("DELETE FROM carrito WHERE id = %s", (id_carrito,))
+        mysql.connection.commit()
+        cur.close()
+        return redirect(url_for('ver_carrito'))
+    return redirect(url_for('login'))
+
+@app.context_processor
+def carrito_total():
+    total_cantidad = 0
+    if 'logueado' in session and session['id_rol'] == 2:
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT SUM(cantidad) AS total FROM carrito WHERE id_usuario = %s", (session['id'],))
+        result = cur.fetchone()
+        cur.close()
+        total_cantidad = result['total'] if result['total'] else 0
+    return dict(total_cantidad=total_cantidad)
 
 
 
