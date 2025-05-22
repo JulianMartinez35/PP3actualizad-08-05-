@@ -20,17 +20,18 @@
         </div>
 
         <div class="mb-3">
-            <label for="colorTexto" class="form-label">Color</label>
-            <div class="d-flex align-items-center gap-3">
-                <input type="text" name="color" id="colorTexto" class="form-control" placeholder="Ej. rojo, azul o #ff0000" required>
-                <input type="color" id="colorPicker" class="form-control form-control-color" value="#000000" title="Elegir color">
-                <div id="colorPreview" style="width: 30px; height: 30px; border: 1px solid #ccc; border-radius: 50%; background-color: #000000;"></div>
-            </div>
+            <label for="color" class="form-label">Color</label>
+            <input type="text" name="color" id="color" class="form-control" placeholder="Ej. rojo, azul" required>
         </div>
 
         <div class="mb-3">
             <label for="talle" class="form-label">Talle</label>
             <input type="text" id="talle" name="talle" class="form-control" placeholder="Ej. S, M, L, 38, 40" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="stock" class="form-label">Stock</label>
+            <input type="number" id="stock" name="stock" class="form-control" min="0" required>
         </div>
 
         <div class="mb-3">
@@ -43,20 +44,3 @@
         </div>
     </form>
 </div>
-
-<script>
-    const colorPicker = document.getElementById("colorPicker");
-    const colorTexto = document.getElementById("colorTexto");
-    const colorPreview = document.getElementById("colorPreview");
-
-    // Sincroniza el input de texto con el picker y preview
-    colorPicker.addEventListener("input", function () {
-        colorPreview.style.backgroundColor = colorPicker.value;
-        colorTexto.value = colorPicker.value;
-    });
-
-    colorTexto.addEventListener("input", function () {
-        colorPreview.style.backgroundColor = colorTexto.value;
-    });
-</script>
-

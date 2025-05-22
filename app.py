@@ -197,6 +197,7 @@ def cargar_producto():
         precio = request.form['precio']
         color = request.form['color']
         talle = request.form['talle']
+        stock = request.form['stock']
         imagen = request.files['imagen']
 
         if imagen:
@@ -206,15 +207,16 @@ def cargar_producto():
 
             cur = mysql.connection.cursor()
             cur.execute("""
-                INSERT INTO productos (nombre, descripcion, precio, color, talle, imagen)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """, (nombre, descripcion, precio, color, talle, filename))
+                INSERT INTO productos (nombre, descripcion, precio, color, talle, stock, imagen)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (nombre, descripcion, precio, color, talle, stock, filename))
             mysql.connection.commit()
             cur.close()
 
         return redirect(url_for('admin'))
 
     return redirect(url_for('home'))
+
 
 
 

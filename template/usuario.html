@@ -17,18 +17,18 @@
                         <p class="card-text">{{ producto.descripcion }}</p>
                         <p class="card-text"><strong>Precio:</strong> ${{ producto.precio }}</p>
                         <p class="card-text"><strong>Talle:</strong> {{ producto.talle }}</p>
+                        <p class="card-text"><strong>Color:</strong> {{ producto.color }}</p>
+                        <p class="card-text">
+                            <strong>Stock:</strong>
+                            {% if producto.stock > 0 %}
+                                {{ producto.stock }} disponibles
+                            {% else %}
+                                <span class="text-danger">Sin stock</span>
+                            {% endif %}
+                        </p>
 
-                        <div class="d-flex align-items-center gap-2">
-                            <strong>Color:</strong>
-                            <span class="text-muted small">{{ producto.color }}</span>
-                            <br>
-                            <button
-                                type="button"
-                                class="btn btn-primary"
-                            >
-                                Button
-                            </button>
-                            
+                        <div class="text-end">
+                            <button type="button" class="btn btn-primary">Comprar</button>
                         </div>
                     </div>
                 </div>
