@@ -1,0 +1,79 @@
+{% include 'admincabecera.html' %}
+
+<div class="container my-5"><div class="text-end mb-3">
+    <a href="{{ url_for('admin') }}" class="btn btn-success">
+        + Cargar nuevo producto
+    </a>
+</div>
+
+    <h2 class="text-center mb-4">Productos Cargados</h2>
+
+    <table class="table table-striped table-bordered align-middle">
+        <thead class="table-dark text-center">
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Precio</th>
+                <th>Colores</th>
+                <th>Talles</th>
+                <th>Stock</th>
+                <th>Imagen</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for producto in productos %}
+            <tr>
+                <td class="text-center">{{ producto.id }}</td>
+                <td>{{ producto.nombre }}</td>
+                <td>{{ producto.descripcion }}</td>
+                <td class="text-end">${{ "%.2f"|format(producto.precio) }}</td>
+                <td>
+                    {% for color in producto.colores %}
+                        <span class="badge bg-primary me-1">{{ color }}</span>
+                    {% endfor %}
+                </td>
+                <td>
+                    {% for talle in producto.talles %}
+                        <span class="badge bg-secondary me-1">{{ talle }}</span>
+                    {% endfor %}
+                </td>
+                <td class="text-center">{{ producto.stock }}</td>
+                <td class="text-center">
+                    <img src="{{ url_for('static', filename='imagenes_productos/' ~ producto.imagen) }}" alt="{{ producto.nombre }}" style="max-height: 80px; cursor: pointer;" onclick="mostrarImagen(this.src)">
+                </td>
+                <td class="text-center">
+                    <a href="{{ url_for('editar_producto', id=producto.id) }}" class="btn btn-sm btn-warning mb-1">Editar</a>
+                    <form method="POST" action="{{ url_for('eliminar_producto', id=producto.id) }}" style="display:inline;" onsubmit="return confirm('¿Estás seguro de eliminar este producto?');">
+                        <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal para agrandar imagen -->
+<div class="modal fade" id="imagenModal" tabindex="-1" aria-labelledby="imagenModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body p-0">
+        <img src="" id="imagenGrande" class="img-fluid w-100" alt="Imagen ampliada">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function mostrarImagen(src) {
+    var imagenModal = new bootstrap.Modal(document.getElementById('imagenModal'));
+    document.getElementById('imagenGrande').src = src;
+    imagenModal.show();
+}
+</script>
+

@@ -1,9 +1,8 @@
 {% include "usuariocabecera.html" %}
 
-
 <div class="container my-5">
     <h2 class="text-center">Tu carrito</h2>
-<p class="text-center text-muted">Productos cargados: <strong>{{ total_cantidad }}</strong></p>
+    <p class="text-center text-muted">Productos cargados: <strong>{{ total_cantidad }}</strong></p>
 
     {% if items %}
         <table class="table table-bordered mt-4">
@@ -13,18 +12,24 @@
                     <th>Imagen</th>
                     <th>Cantidad</th>
                     <th>Precio</th>
+                    <th>Talle</th>
+                    <th>Color</th>
                     <th>Subtotal</th>
-                    <th>Acción</th> <!-- Columna eliminar -->
+                    <th>Acción</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in items %}
                 <tr>
                     <td>{{ item.nombre }}</td>
-                    <td><img src="{{ url_for('static', filename='imagenes_productos/' ~ item.imagen) }}" width="50"></td>
+                    <td>
+                        <img src="{{ url_for('static', filename='imagenes_productos/' ~ item.imagen) }}" width="50">
+                    </td>
                     <td>{{ item.cantidad }}</td>
-                    <td>${{ item.precio }}</td>
-                    <td>${{ item.precio * item.cantidad }}</td>
+                    <td>$ {{ "{:,.0f}".format(item.precio).replace(",", ".") }}</td>
+                    <td>{{ item.talle }}</td>
+                    <td>{{ item.color }}</td>
+                    <td>$ {{ "{:,.0f}".format(item.precio * item.cantidad).replace(",", ".") }}</td>
                     <td>
                         <form method="POST" action="{{ url_for('eliminar_del_carrito') }}">
                             <input type="hidden" name="id" value="{{ item.id }}">
@@ -34,8 +39,8 @@
                 </tr>
                 {% endfor %}
                 <tr>
-                    <td colspan="4" class="text-end"><strong>Total:</strong></td>
-                    <td><strong>${{ total }}</strong></td>
+                    <td colspan="6" class="text-end"><strong>Total:</strong></td>
+                    <td><strong>$ {{ "{:,.0f}".format(total).replace(",", ".") }}</strong></td>
                     <td></td>
                 </tr>
             </tbody>

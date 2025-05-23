@@ -6,19 +6,23 @@
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
         {% for producto in productos %}
         <div class="col">
-            <div class="card h-100 shadow-sm rounded-4">
-                <img src="{{ url_for('static', filename='imagenes_productos/' ~ producto.imagen) }}"
-                     class="card-img-top"
-                     style="object-fit: cover; height: 250px; border-top-left-radius: 1rem; border-top-right-radius: 1rem;"
-                     alt="Imagen del producto {{ producto.nombre }}">
+            <div class="card h-100 border-0 shadow-sm rounded-4">
+                <!-- Imagen del producto con trigger para modal -->
+                <div class="d-flex justify-content-center align-items-center bg-white rounded-top" style="height: 420px;">
+                    <img src="{{ url_for('static', filename='imagenes_productos/' ~ producto.imagen) }}"
+                         class="img-fluid p-2"
+                         style="max-height: 100%; max-width: 100%; object-fit: contain; cursor: pointer;"
+                         alt="Imagen del producto {{ producto.nombre }}"
+                         data-bs-toggle="modal" data-bs-target="#modalImagen{{ producto.id }}">
+                </div>
 
-                <div class="card-body">
-                    <h5 class="card-title text-uppercase">{{ producto.nombre }}</h5>
-                    <p class="card-text">{{ producto.descripcion }}</p>
-                    <p class="card-text"><strong>Precio:</strong> ${{ producto.precio }}</p>
-                    <p class="card-text"><strong>Talle:</strong> {{ producto.talle }}</p>
-                    <p class="card-text"><strong>Color:</strong> {{ producto.color }}</p>
-                    <p class="card-text">
+                <!-- Información del producto -->
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title text-uppercase fw-bold">{{ producto.nombre }}</h5>
+                    <p class="card-text small text-muted">{{ producto.descripcion }}</p>
+
+                    <p class="mb-1"><strong>Precio:</strong> ${{ "{:,.0f}".format(producto.precio).replace(",", ".") }}</p>
+                    <p>
                         <strong>Stock:</strong>
                         {% if producto.stock > 0 %}
                             {{ producto.stock }} disponibles
@@ -28,19 +32,56 @@
                     </p>
 
                     {% if producto.stock > 0 %}
-                    <form action="{{ url_for('agregar_carrito', id_producto=producto.id) }}" method="POST">
+                    <form action="{{ url_for('agregar_carrito', id_producto=producto.id) }}" method="POST" class="mt-auto">
+                        <!-- Talle -->
+                        <div class="mb-2">
+                            <label for="talle_{{ producto.id }}" class="form-label"><strong>Talle:</strong></label>
+                            <select name="talle" id="talle_{{ producto.id }}" class="form-select form-select-sm" required>
+                                {% for talle in producto.talles %}
+                                    <option value="{{ talle }}">{{ talle }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Color -->
+                        <div class="mb-2">
+                            <label for="color_{{ producto.id }}" class="form-label"><strong>Color:</strong></label>
+                            <select name="color" id="color_{{ producto.id }}" class="form-select form-select-sm" required>
+                                {% for color in producto.colores %}
+                                    <option value="{{ color }}">{{ color }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Cantidad y botón -->
                         <div class="input-group mb-2">
-                            <input type="number" name="cantidad" class="form-control" value="1" min="1" max="{{ producto.stock }}" required>
-                            <button type="submit" class="btn btn-success">Agregar al carrito</button>
+                            <input type="number" name="cantidad" class="form-control form-control-sm" value="1" min="1" max="{{ producto.stock }}" required>
+                            <button type="submit" class="btn btn-success btn-sm">Agregar al carrito</button>
                         </div>
                     </form>
                     {% else %}
-                    <button class="btn btn-secondary w-100" disabled>Sin stock</button>
+                    <button class="btn btn-secondary w-100 mt-auto" disabled>Sin stock</button>
                     {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para imagen ampliada -->
+        <div class="modal fade" id="modalImagen{{ producto.id }}" tabindex="-1" aria-labelledby="modalLabel{{ producto.id }}" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalLabel{{ producto.id }}">{{ producto.nombre }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body d-flex justify-content-center">
+                        <img src="{{ url_for('static', filename='imagenes_productos/' ~ producto.imagen) }}"
+                             class="img-fluid"
+                             alt="Imagen ampliada del producto {{ producto.nombre }}">
+                    </div>
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
 </div>
-
