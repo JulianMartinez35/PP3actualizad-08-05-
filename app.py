@@ -3,12 +3,12 @@
 #pip install mysqlclient
 #pip install flask-mysqldb
 
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_mysqldb import MySQL, MySQLdb
 import os
 from werkzeug.utils import secure_filename
-import MySQLdb.cursors
-
+from MySQLdb.cursors import DictCursor
+from datetime import datetime
 
 
 
@@ -179,7 +179,7 @@ def usuario():
             producto['colores'] = producto['color'].split(',') if producto['color'] else []
 
         return render_template('usuario.html', productos=productos)
-    return redirect(url_for('index.html'))
+    return redirect(url_for('home'))
 
 
 
@@ -428,6 +428,74 @@ def eliminar_producto(id):
 @app.route("/admin")
 def ruta_cargar_producto():
     return render_template("admin.html")
+
+# RUTA A RESEÑAS
+@app.route('/usuario_reseñas')
+def usuario_reseñas():
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+    cursor.execute("SELECT * FROM productos")
+    productos = cursor.fetchall()
+
+    lista_productos = []
+    for producto in productos:
+        id_producto = producto['id']
+
+        cursor.execute("""
+            SELECT r.comentario, r.puntuacion, u.correo, r.fecha
+            FROM resenas r
+            JOIN usuarios u ON r.usuario_id = u.id
+            WHERE r.producto_id = %s
+            ORDER BY r.fecha DESC;
+        """, (id_producto,))
+        resenas = cursor.fetchall()
+
+        producto['resenas'] = resenas  # Cambié 'reseñas' por 'resenas' para evitar problemas con la ñ
+
+        lista_productos.append(producto)
+
+    cursor.close()
+    return render_template("usuario.html", productos=lista_productos)
+
+
+# AGREGAR RESEÑAS
+@app.route('/agregar_resena/<int:producto_id>', methods=['POST'])
+def agregar_resena(producto_id):
+    if not session.get('logueado'):
+        return redirect(url_for('login'))
+
+    usuario_id = session.get('id')
+    comentario = request.form.get('comentario', '').strip()
+    try:
+        puntuacion = int(request.form.get('puntuacion'))
+    except (ValueError, TypeError):
+        return "Puntuación inválida", 400
+
+    if not comentario:
+        return "El comentario no puede estar vacío", 400
+
+    if puntuacion < 1 or puntuacion > 5:
+        return "Puntuación inválida", 400
+
+    cursor = mysql.connection.cursor()
+    try:
+        cursor.execute("""
+            INSERT INTO resenas (producto_id, usuario_id, puntuacion, comentario, fecha)
+            VALUES (%s, %s, %s, %s, NOW())
+        """, (producto_id, usuario_id, puntuacion, comentario))
+        mysql.connection.commit()
+    except mysql.connection.Error as e:
+        # Aquí podrías manejar errores de base de datos, por ejemplo, si existe una reseña duplicada por la restricción UNIQUE
+        return f"Error al agregar la reseña: {str(e)}", 500
+    finally:
+        cursor.close()
+
+    return redirect(url_for('usuario_reseñas'))
+
+
+
+#MOSTRAR RESEÑAS
+
 
 # ==============================
 # EJECUCIÓN DE LA APP

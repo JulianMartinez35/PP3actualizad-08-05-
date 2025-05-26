@@ -1,0 +1,28 @@
+<h2>{{ producto[1] }}</h2> <!-- Nombre del producto -->
+<img src="{{ producto[5] }}" alt="Imagen del producto">
+<p>{{ producto[2] }}</p> <!-- Descripción -->
+<p><strong>Precio:</strong> ${{ producto[3] }}</p>
+
+<hr>
+<h3>Opiniones de usuarios:</h3>
+{% for reseña in reseñas %}
+  <div>
+    <strong>{{ reseña[2] }}</strong> - {{ reseña[1] }}/5 ★
+    <p>{{ reseña[0] }}</p>
+  </div>
+{% endfor %}
+
+{% if session.get('logueado') %}
+  <hr>
+  <form method="post" action="{{ url_for('agregar_resena', producto_id=producto[0]) }}">
+    <label for="puntuacion">Puntuación (1-5):</label>
+    <input type="number" name="puntuacion" min="1" max="5" required>
+    <br>
+    <label for="comentario">Comentario:</label>
+    <textarea name="comentario" required></textarea>
+    <br>
+    <button type="submit">Enviar reseña</button>
+  </form>
+{% else %}
+  <p>Iniciá sesión para dejar una reseña.</p>
+{% endif %}

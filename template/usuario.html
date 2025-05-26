@@ -66,7 +66,7 @@
             </div>
         </div>
 
-        <!-- Modal para imagen ampliada -->
+        <!-- Modal para imagen ampliada y reseñas -->
         <div class="modal fade" id="modalImagen{{ producto.id }}" tabindex="-1" aria-labelledby="modalLabel{{ producto.id }}" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content">
@@ -74,10 +74,64 @@
                         <h5 class="modal-title" id="modalLabel{{ producto.id }}">{{ producto.nombre }}</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                     </div>
-                    <div class="modal-body d-flex justify-content-center">
+                    <div class="modal-body d-flex flex-column align-items-center">
+                        <!-- Imagen -->
                         <img src="{{ url_for('static', filename='imagenes_productos/' ~ producto.imagen) }}"
-                             class="img-fluid"
+                             class="img-fluid mb-3"
                              alt="Imagen ampliada del producto {{ producto.nombre }}">
+
+                        <!-- Reseñas -->
+                        <div class="w-100 mt-3">
+                            <h6 class="fw-bold">Reseñas:</h6>
+                            {% if producto.resenas %}
+                                <div class="mb-3" style="max-height: 200px; overflow-y: auto;">
+                                    {% for reseña in producto.resenas %}
+                                        <div class="border-bottom pb-2 mb-2">
+                                            <strong class="text-primary">{{ reseña.correo }}</strong>
+                                            <span class="text-warning">
+                                                {% for i in range(1, reseña.puntuacion + 1) %}
+                                                    ★
+                                                {% endfor %}
+                                                {% for i in range(reseña.puntuacion + 1, 6) %}
+                                                    ☆
+                                                {% endfor %}
+                                            </span>
+                                            <p class="mb-1">{{ reseña.comentario }}</p>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-muted">Este producto aún no tiene reseñas.</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Formulario de reseña -->
+                        {% if session.get('logueado') %}
+                        <form method="POST" action="{{ url_for('agregar_resena', producto_id=producto.id) }}" class="w-100">
+                            <div class="mb-2">
+                                <label class="form-label">Puntuación:</label>
+                                <div class="d-flex flex-column gap-1">
+                                    {% for i in range(1, 6) %}
+                                        <div class="form-check d-flex align-items-center">
+                                            <input class="form-check-input me-2" type="radio" name="puntuacion" id="estrella{{ i }}_{{ producto.id }}" value="{{ i }}" required>
+                                            <label class="form-check-label text-warning mb-0" for="estrella{{ i }}_{{ producto.id }}">
+                                                {% for j in range(1, i + 1) %}
+                                                    ★
+                                                {% endfor %}
+                                            </label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Comentario:</label>
+                                <textarea name="comentario" class="form-control form-control-sm" rows="2" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm">Enviar reseña</button>
+                        </form>
+                        {% else %}
+                        <p class="text-muted mt-2">Iniciá sesión para dejar una reseña.</p>
+                        {% endif %}
                     </div>
                 </div>
             </div>
