@@ -48,7 +48,9 @@
           <div class="mb-3">
             <label class="form-label fw-semibold">Colores disponibles</label>
             <div class="d-flex flex-wrap gap-2">
-              {% for color in ['Rojo', 'Negro', 'Blanco', 'Azul', 'Verde'] %}
+              {% set colores = ['Rojo', 'Negro', 'Blanco', 'Azul', 'Verde'] %}
+              {% set colores_seleccionados = producto.colores | default([]) %}
+              {% for color in colores %}
               <div class="form-check form-check-inline">
                 <input
                   class="form-check-input"
@@ -56,7 +58,7 @@
                   name="color"
                   id="color-{{ color }}"
                   value="{{ color }}"
-                  {% if color in producto.colores %}checked{% endif %}
+                  {% if color in colores_seleccionados %}checked{% endif %}
                 >
                 <label class="form-check-label" for="color-{{ color }}">{{ color }}</label>
               </div>
@@ -67,7 +69,9 @@
           <div class="mb-3">
             <label class="form-label fw-semibold">Talles disponibles</label>
             <div class="d-flex flex-wrap gap-2">
-              {% for talle in ['S', 'M', 'L', 'XL'] %}
+              {% set talles = ['S', 'M', 'L', 'XL'] %}
+              {% set talles_seleccionados = producto.talles | default([]) %}
+              {% for talle in talles %}
               <div class="form-check form-check-inline">
                 <input
                   class="form-check-input"
@@ -75,7 +79,7 @@
                   name="talle"
                   id="talle-{{ talle }}"
                   value="{{ talle }}"
-                  {% if talle in producto.talles %}checked{% endif %}
+                  {% if talle in talles_seleccionados %}checked{% endif %}
                 >
                 <label class="form-check-label" for="talle-{{ talle }}">{{ talle }}</label>
               </div>
@@ -97,22 +101,19 @@
 <script>
   function formatearPrecio(num) {
     if (!num) return '';
-    // Convierte a string, elimina decimales y formatea con puntos
     let n = parseInt(num).toString();
     return '$' + n.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   }
 
   function limpiarFormato(valor) {
-    return valor.replace(/\D/g, ''); // solo números
+    return valor.replace(/\D/g, '');
   }
 
   const inputDisplay = document.getElementById('precio_display');
   const inputHidden = document.getElementById('precio');
 
-  // Inicializa el campo con formato
   inputDisplay.value = formatearPrecio(inputHidden.value);
 
-  // Actualiza campo oculto al cambiar campo visible, y formatea visualmente
   inputDisplay.addEventListener('input', function() {
     const limpio = limpiarFormato(this.value);
     inputHidden.value = limpio;

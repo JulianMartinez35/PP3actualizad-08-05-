@@ -165,21 +165,37 @@ def admin():
         return render_template('admin.html')
     return redirect(url_for('home'))
 
-# RUTA PARA USUARIO COMÚN (protegida)
+# RUTA PARA USUARIO COMÚN (protegida) + (RESEÑAS)
 @app.route('/usuario')
 def usuario():
     if 'logueado' in session and session['id_rol'] == 2:
-        cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)  # Esto es fundamental
-        cur.execute("SELECT * FROM productos")
-        productos = cur.fetchall()
-        cur.close()
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
+        cursor.execute("SELECT * FROM productos")
+        productos = cursor.fetchall()
+
+        lista_productos = []
         for producto in productos:
             producto['talles'] = producto['talle'].split(',') if producto['talle'] else []
             producto['colores'] = producto['color'].split(',') if producto['color'] else []
 
-        return render_template('usuario.html', productos=productos)
+            cursor.execute("""
+                SELECT r.comentario, r.puntuacion, u.correo, r.fecha
+                FROM resenas r
+                JOIN usuarios u ON r.usuario_id = u.id
+                WHERE r.producto_id = %s
+                ORDER BY r.fecha DESC;
+            """, (producto['id'],))
+            resenas = cursor.fetchall()
+
+            producto['resenas'] = resenas if resenas else []
+            lista_productos.append(producto)
+
+        cursor.close()
+        return render_template('usuario.html', productos=lista_productos)
+
     return redirect(url_for('home'))
+
 
 
 
@@ -429,33 +445,7 @@ def eliminar_producto(id):
 def ruta_cargar_producto():
     return render_template("admin.html")
 
-# RUTA A RESEÑAS
-@app.route('/usuario_reseñas')
-def usuario_reseñas():
-    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-    cursor.execute("SELECT * FROM productos")
-    productos = cursor.fetchall()
-
-    lista_productos = []
-    for producto in productos:
-        id_producto = producto['id']
-
-        cursor.execute("""
-            SELECT r.comentario, r.puntuacion, u.correo, r.fecha
-            FROM resenas r
-            JOIN usuarios u ON r.usuario_id = u.id
-            WHERE r.producto_id = %s
-            ORDER BY r.fecha DESC;
-        """, (id_producto,))
-        resenas = cursor.fetchall()
-
-        producto['resenas'] = resenas  # Cambié 'reseñas' por 'resenas' para evitar problemas con la ñ
-
-        lista_productos.append(producto)
-
-    cursor.close()
-    return render_template("usuario.html", productos=lista_productos)
 
 
 # AGREGAR RESEÑAS
@@ -490,7 +480,7 @@ def agregar_resena(producto_id):
     finally:
         cursor.close()
 
-    return redirect(url_for('usuario_reseñas'))
+    return redirect(url_for('usuario'))
 
 
 
