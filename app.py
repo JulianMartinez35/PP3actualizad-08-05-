@@ -162,8 +162,13 @@ def recuperar():
 @app.route('/admin')
 def admin():
     if 'logueado' in session and session['id_rol'] == 1:
-        return render_template('admin.html')
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute("SELECT * FROM categorias")
+        categorias = cursor.fetchall()
+        cursor.close()
+        return render_template('admin.html', categorias=categorias)
     return redirect(url_for('home'))
+
 
 # RUTA PARA USUARIO COMÚN (protegida) + (RESEÑAS)
 @app.route('/usuario')
@@ -171,7 +176,18 @@ def usuario():
     if 'logueado' in session and session['id_rol'] == 2:
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
-        cursor.execute("SELECT * FROM productos")
+        # Obtener todas las categorías
+        cursor.execute("SELECT * FROM categorias")
+        categorias = cursor.fetchall()
+
+        # Obtener el ID de la categoría seleccionada desde la URL
+        categoria_id = request.args.get('categoria_id')
+
+        # Filtrar productos según la categoría si se seleccionó alguna
+        if categoria_id:
+            cursor.execute("SELECT * FROM productos WHERE categoria_id = %s", (categoria_id,))
+        else:
+            cursor.execute("SELECT * FROM productos")
         productos = cursor.fetchall()
 
         lista_productos = []
@@ -192,9 +208,16 @@ def usuario():
             lista_productos.append(producto)
 
         cursor.close()
-        return render_template('usuario.html', productos=lista_productos)
+
+        return render_template(
+            'usuario.html',
+            productos=lista_productos,
+            categorias=categorias,
+            categoria_seleccionada=int(categoria_id) if categoria_id else None
+        )
 
     return redirect(url_for('home'))
+
 
 
 
@@ -208,7 +231,7 @@ def logout():
     session.clear()
     return redirect(url_for('home'))
 
-#CARGAR PRODUCTOS
+# CARGAR PRODUCTOS
 
 # Carpeta para subir imágenes
 UPLOAD_FOLDER = 'static/imagenes_productos'
@@ -223,6 +246,7 @@ def cargar_producto():
         color = request.form['color']
         talle = request.form['talle']
         stock = request.form['stock']
+        categoria_id = request.form['categoria_id']  # ✅ NUEVO CAMPO
         imagen = request.files['imagen']
 
         if imagen:
@@ -232,15 +256,16 @@ def cargar_producto():
 
             cur = mysql.connection.cursor()
             cur.execute("""
-                INSERT INTO productos (nombre, descripcion, precio, color, talle, stock, imagen)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """, (nombre, descripcion, precio, color, talle, stock, filename))
+                INSERT INTO productos (nombre, descripcion, precio, color, talle, stock, imagen, categoria_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """, (nombre, descripcion, precio, color, talle, stock, filename, categoria_id))  # ✅ MODIFICADO
             mysql.connection.commit()
             cur.close()
 
         return redirect(url_for('admin'))
 
     return redirect(url_for('home'))
+
 
 #AGREGAR CARRITO
 
@@ -348,7 +373,7 @@ def admin_productos():
 # EDITAR PRODUCTO 
 @app.route('/admin/producto/editar/<int:id>', methods=['GET', 'POST'])
 def editar_producto(id):
-    cur = mysql.connection.cursor()
+    cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
 
     if request.method == 'POST':
         nombre = request.form['nombre']
@@ -356,29 +381,25 @@ def editar_producto(id):
         precio = float(request.form['precio'])
         stock = int(request.form['stock'])
 
-        # Nuevos campos: texto separados por comas
         colores_input = request.form['color']
         talles_input = request.form['talle']
+        categoria_id = request.form['categoria_id']  # 🟢 Nuevo
 
-        # Procesar colores y talles en listas y luego unir en strings
         colores = [c.strip() for c in colores_input.split(',') if c.strip()]
         talles = [t.strip() for t in talles_input.split(',') if t.strip()]
         colores_str = ','.join(colores)
         talles_str = ','.join(talles)
 
-        # Obtener imagen actual
         cur.execute("SELECT imagen FROM productos WHERE id = %s", (id,))
         producto_actual = cur.fetchone()
         imagen_actual = producto_actual['imagen'] if producto_actual else None
 
-        # Procesar imagen nueva si se subió
         imagen_nueva = request.files.get('imagen')
         if imagen_nueva and imagen_nueva.filename != '':
             filename = secure_filename(imagen_nueva.filename)
             ruta_guardado = os.path.join('static/imagenes_productos', filename)
             imagen_nueva.save(ruta_guardado)
 
-            # Eliminar imagen anterior si es diferente
             if imagen_actual and imagen_actual != filename:
                 ruta_imagen_actual = os.path.join('static/imagenes_productos', imagen_actual)
                 if os.path.exists(ruta_imagen_actual):
@@ -388,35 +409,42 @@ def editar_producto(id):
         else:
             imagen_a_guardar = imagen_actual
 
-        # Actualizar producto
+        # 🔄 Agregamos categoria_id al UPDATE
         cur.execute("""
             UPDATE productos
-            SET nombre=%s, descripcion=%s, precio=%s, stock=%s, color=%s, talle=%s, imagen=%s
+            SET nombre=%s, descripcion=%s, precio=%s, stock=%s, color=%s, talle=%s, imagen=%s, categoria_id=%s
             WHERE id=%s
-        """, (nombre, descripcion, precio, stock, colores_str, talles_str, imagen_a_guardar, id))
+        """, (nombre, descripcion, precio, stock, colores_str, talles_str, imagen_a_guardar, categoria_id, id))
         mysql.connection.commit()
 
         return redirect(url_for('admin_productos'))
 
     else:
-        # Obtener producto y separar colores/talles como listas
+        # Obtener el producto
         cur.execute("SELECT * FROM productos WHERE id = %s", (id,))
         producto = cur.fetchone()
 
-        if producto:
-            producto_dict = {
-                'id': producto["id"],
-                'nombre': producto["nombre"],
-                'descripcion': producto["descripcion"],
-                'precio': producto["precio"],
-                'stock': producto["stock"],
-                'imagen': producto["imagen"],
-                'colores': producto["color"].split(',') if producto["color"] else [],
-                'talles': producto["talle"].split(',') if producto["talle"] else [],
-            }
-            return render_template('editar_producto.html', producto=producto_dict)
-        else:
+        if not producto:
             return "Producto no encontrado", 404
+
+        # 🟢 Obtener categorías
+        cur.execute("SELECT * FROM categorias")
+        categorias = cur.fetchall()
+
+        producto_dict = {
+            'id': producto["id"],
+            'nombre': producto["nombre"],
+            'descripcion': producto["descripcion"],
+            'precio': producto["precio"],
+            'stock': producto["stock"],
+            'imagen': producto["imagen"],
+            'colores': producto["color"].split(',') if producto["color"] else [],
+            'talles': producto["talle"].split(',') if producto["talle"] else [],
+            'categoria_id': producto["categoria_id"]  # 🟢 Necesario para marcar la categoría seleccionada
+        }
+
+        return render_template('editar_producto.html', producto=producto_dict, categorias=categorias)
+
 
 
 
@@ -489,7 +517,73 @@ def agregar_resena(producto_id):
 
 
 
-#MOSTRAR RESEÑAS
+#CATEGORIAS
+# Listar categorías
+@app.route('/admin/categorias')
+def admin_categorias():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT id, nombre FROM categorias ORDER BY id ASC")
+    categorias = cur.fetchall()  # lista de tuplas (id, nombre)
+    cur.close()
+
+    return render_template('admin_categorias.html', categorias=categorias)
+
+#agrgar categorias
+@app.route('/admin/categorias/agregar', methods=['GET', 'POST'])
+def agregar_categoria():
+    if request.method == 'POST':
+        nombre = request.form['nombre'].strip()
+        if not nombre:
+            flash('El nombre de la categoría no puede estar vacío', 'danger')
+            return redirect(url_for('agregar_categoria'))
+
+        cur = mysql.connection.cursor()
+        cur.execute("INSERT INTO categorias (nombre) VALUES (%s)", (nombre,))
+        mysql.connection.commit()
+        cur.close()
+
+        flash('Categoría agregada con éxito', 'success')
+        return redirect(url_for('admin_categorias'))
+
+    return render_template('agregar_categoria.html')
+
+#editar categorias
+@app.route('/admin/categorias/editar/<int:id>', methods=['GET', 'POST'])
+def editar_categoria(id):
+    cur = mysql.connection.cursor()
+
+    if request.method == 'POST':
+        nombre = request.form['nombre'].strip()
+        if not nombre:
+            flash('El nombre de la categoría no puede estar vacío', 'danger')
+            return redirect(url_for('editar_categoria', id=id))
+
+        cur.execute("UPDATE categorias SET nombre = %s WHERE id = %s", (nombre, id))
+        mysql.connection.commit()
+        cur.close()
+        flash('Categoría actualizada', 'success')
+        return redirect(url_for('admin_categorias'))
+
+    # GET
+    cur.execute("SELECT id, nombre FROM categorias WHERE id = %s", (id,))
+    categoria = cur.fetchone()
+    cur.close()
+    if categoria is None:
+        flash('Categoría no encontrada', 'danger')
+        return redirect(url_for('admin_categorias'))
+
+    return render_template('editar_categoria.html', categoria=categoria)
+
+
+#ruta eliminar categorias
+@app.route('/admin/categorias/eliminar/<int:id>', methods=['POST'])
+def eliminar_categoria(id):
+    cur = mysql.connection.cursor()
+    cur.execute("DELETE FROM categorias WHERE id = %s", (id,))
+    mysql.connection.commit()
+    cur.close()
+    flash('Categoría eliminada', 'success')
+    return redirect(url_for('admin_categorias'))
 
 
 # ==============================

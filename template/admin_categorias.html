@@ -1,0 +1,44 @@
+{% include 'admincabecera.html' %}
+
+<div class="container my-5">
+
+    <div class="text-end mb-3">
+      <a href="{{ url_for('agregar_categoria') }}" class="btn btn-success">
+        + Cargar nueva categoría
+      </a>
+    </div>
+  
+    <h2 class="text-center mb-4">Categorías Cargadas</h2>
+  
+    <table class="table table-striped table-bordered align-middle">
+      <thead class="table-dark text-center">
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for categoria in categorias %}
+        <tr>
+          <td class="text-center">{{ categoria.id }}</td>
+          <td>{{ categoria.nombre }}</td>
+          <td class="text-center">
+            <a href="{{ url_for('editar_categoria', id=categoria.id) }}" class="btn btn-sm btn-warning mb-1">Editar</a>
+  
+            <form method="POST" action="{{ url_for('eliminar_categoria', id=categoria.id) }}" style="display:inline;" onsubmit="return confirm('¿Estás seguro de eliminar esta categoría?');">
+              <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="3" class="text-center">No hay categorías cargadas.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  
+</div>
+
+  

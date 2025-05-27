@@ -1,0 +1,14 @@
+<!-- editar_categoria.html -->
+{% include 'admincabecera.html' %}
+
+<div class="container mt-5" style="max-width: 500px;">
+  <h2 class="mb-4">Editar Categoría</h2>
+  <form method="POST">
+    <div class="mb-3">
+      <label for="nombre" class="form-label">Nombre de la categoría</label>
+      <input type="text" class="form-control" id="nombre" name="nombre" value="{{ categoria.nombre }}" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+    <a href="{{ url_for('admin_categorias') }}" class="btn btn-secondary">Cancelar</a>
+  </form>
+</div>

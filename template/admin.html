@@ -41,6 +41,16 @@
                     <input type="file" id="imagen" name="imagen" accept="image/*" class="form-control" required>
                 </div>
 
+                <!-- Campo de categoría -->
+                <div class="mb-3">
+                    <label for="categoria" class="form-label">Categoría</label>
+                    <select name="categoria_id" id="categoria" class="form-select" required>
+                        {% for categoria in categorias %}
+                            <option value="{{ categoria.id }}">{{ categoria.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
                 <div class="text-end">
                     <button type="submit" class="btn btn-dark rounded-pill">Cargar producto</button>
                 </div>

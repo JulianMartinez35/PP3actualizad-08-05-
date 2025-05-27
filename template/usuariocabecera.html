@@ -60,9 +60,18 @@
         <li class="nav-item">
           <a class="nav-link active" aria-current="page" href="usuario">Productos</a>
         </li>
-        <li class="nav-item">
-          <a class="nav-link" href="">Categorias</a>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="categoriasDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Categorías
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="categoriasDropdown">
+            <li><a class="dropdown-item" href="{{ url_for('usuario') }}">Todas</a></li>
+            {% for categoria in categorias %}
+              <li><a class="dropdown-item" href="{{ url_for('usuario') }}?categoria_id={{ categoria.id }}">{{ categoria.nombre }}</a></li>
+            {% endfor %}
+          </ul>
         </li>
+        
         <li class="nav-item">
           <a class="nav-link" href="">Nueva Temporada</a>
         </li>

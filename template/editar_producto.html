@@ -63,6 +63,16 @@
             <small class="text-muted">Separar por comas</small>
           </div>
 
+          <!-- Categoría -->
+          <div class="mb-4">
+            <label for="categoria" class="form-label fw-semibold">Categoría</label>
+            <select name="categoria_id" id="categoria" class="form-select form-select-sm" required>
+              {% for categoria in categorias %}
+                <option value="{{ categoria.id }}" {% if categoria.id == producto.categoria_id %}selected{% endif %}>{{ categoria.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
           <div class="text-end">
             <button type="submit" class="btn btn-primary btn-sm">Guardar Cambios</button>
             <a href="{{ url_for('admin_productos') }}" class="btn btn-secondary btn-sm ms-2">Cancelar</a>
