@@ -28,7 +28,7 @@
                 <td class="text-center">{{ producto.id }}</td>
                 <td>{{ producto.nombre }}</td>
                 <td>{{ producto.descripcion }}</td>
-                <td class="text-end">${{ "%.2f"|format(producto.precio) }}</td>
+                <td class="text-end">${{ "{:,.0f}".format(producto.precio).replace(",", ".") }}</td>
                 <td>
                     {% for color in producto.colores %}
                         <span class="badge bg-primary me-1">{{ color }}</span>
@@ -76,4 +76,3 @@ function mostrarImagen(src) {
     imagenModal.show();
 }
 </script>
-
