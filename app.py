@@ -176,8 +176,8 @@ def usuario():
 
         lista_productos = []
         for producto in productos:
-            producto['talles'] = producto['talle'].split(',') if producto['talle'] else []
-            producto['colores'] = producto['color'].split(',') if producto['color'] else []
+            producto['talles'] = [t.strip() for t in producto['talle'].split(',')] if producto['talle'] else []
+            producto['colores'] = [c.strip() for c in producto['color'].split(',')] if producto['color'] else []
 
             cursor.execute("""
                 SELECT r.comentario, r.puntuacion, u.correo, r.fecha
@@ -355,26 +355,30 @@ def editar_producto(id):
         descripcion = request.form['descripcion']
         precio = float(request.form['precio'])
         stock = int(request.form['stock'])
-        colores = request.form.getlist('color')
-        talles = request.form.getlist('talle')
 
+        # Nuevos campos: texto separados por comas
+        colores_input = request.form['color']
+        talles_input = request.form['talle']
+
+        # Procesar colores y talles en listas y luego unir en strings
+        colores = [c.strip() for c in colores_input.split(',') if c.strip()]
+        talles = [t.strip() for t in talles_input.split(',') if t.strip()]
         colores_str = ','.join(colores)
         talles_str = ','.join(talles)
 
-        # Consultar la imagen actual
+        # Obtener imagen actual
         cur.execute("SELECT imagen FROM productos WHERE id = %s", (id,))
         producto_actual = cur.fetchone()
         imagen_actual = producto_actual['imagen'] if producto_actual else None
 
-        # Procesar la imagen subida
+        # Procesar imagen nueva si se subió
         imagen_nueva = request.files.get('imagen')
         if imagen_nueva and imagen_nueva.filename != '':
-            # Guardar la imagen nueva
             filename = secure_filename(imagen_nueva.filename)
             ruta_guardado = os.path.join('static/imagenes_productos', filename)
             imagen_nueva.save(ruta_guardado)
 
-            # Borrar la imagen anterior si existe y es diferente
+            # Eliminar imagen anterior si es diferente
             if imagen_actual and imagen_actual != filename:
                 ruta_imagen_actual = os.path.join('static/imagenes_productos', imagen_actual)
                 if os.path.exists(ruta_imagen_actual):
@@ -382,10 +386,9 @@ def editar_producto(id):
 
             imagen_a_guardar = filename
         else:
-            # Si no subieron nueva imagen, mantener la vieja
             imagen_a_guardar = imagen_actual
 
-        # Actualizar la base de datos con todos los datos, incluida la imagen
+        # Actualizar producto
         cur.execute("""
             UPDATE productos
             SET nombre=%s, descripcion=%s, precio=%s, stock=%s, color=%s, talle=%s, imagen=%s
@@ -396,6 +399,7 @@ def editar_producto(id):
         return redirect(url_for('admin_productos'))
 
     else:
+        # Obtener producto y separar colores/talles como listas
         cur.execute("SELECT * FROM productos WHERE id = %s", (id,))
         producto = cur.fetchone()
 
@@ -413,6 +417,7 @@ def editar_producto(id):
             return render_template('editar_producto.html', producto=producto_dict)
         else:
             return "Producto no encontrado", 404
+
 
 
 

@@ -45,46 +45,22 @@
             </div>
           </div>
 
+          <!-- Colores personalizados -->
           <div class="mb-3">
             <label class="form-label fw-semibold">Colores disponibles</label>
-            <div class="d-flex flex-wrap gap-2">
-              {% set colores = ['Rojo', 'Negro', 'Blanco', 'Azul', 'Verde'] %}
-              {% set colores_seleccionados = producto.colores | default([]) %}
-              {% for color in colores %}
-              <div class="form-check form-check-inline">
-                <input
-                  class="form-check-input"
-                  type="checkbox"
-                  name="color"
-                  id="color-{{ color }}"
-                  value="{{ color }}"
-                  {% if color in colores_seleccionados %}checked{% endif %}
-                >
-                <label class="form-check-label" for="color-{{ color }}">{{ color }}</label>
-              </div>
-              {% endfor %}
-            </div>
+            <input type="text" name="color" class="form-control form-control-sm" 
+                   value="{{ producto.colores | join(', ') }}" 
+                   placeholder="Ej: Rojo, Azul, Verde" required>
+            <small class="text-muted">Separar por comas</small>
           </div>
 
+          <!-- Talles personalizados -->
           <div class="mb-3">
             <label class="form-label fw-semibold">Talles disponibles</label>
-            <div class="d-flex flex-wrap gap-2">
-              {% set talles = ['S', 'M', 'L', 'XL'] %}
-              {% set talles_seleccionados = producto.talles | default([]) %}
-              {% for talle in talles %}
-              <div class="form-check form-check-inline">
-                <input
-                  class="form-check-input"
-                  type="checkbox"
-                  name="talle"
-                  id="talle-{{ talle }}"
-                  value="{{ talle }}"
-                  {% if talle in talles_seleccionados %}checked{% endif %}
-                >
-                <label class="form-check-label" for="talle-{{ talle }}">{{ talle }}</label>
-              </div>
-              {% endfor %}
-            </div>
+            <input type="text" name="talle" class="form-control form-control-sm" 
+                   value="{{ producto.talles | join(', ') }}" 
+                   placeholder="Ej: S, M, L, XL" required>
+            <small class="text-muted">Separar por comas</small>
           </div>
 
           <div class="text-end">
