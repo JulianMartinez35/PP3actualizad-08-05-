@@ -467,20 +467,8 @@ def eliminar_producto(id):
 
         cur.execute("DELETE FROM productos WHERE id = %s", (id,))
         mysql.connection.commit()
-
-    return redirect(url_for('admin_productos'))
-
-
-
-
-# RUTA A CARGAR PRODUCTOS
-@app.route("/admin")
-def ruta_cargar_producto():
-    return render_template("admin.html")
-
-
-
-
+        return redirect(url_for('admin_productos'))
+    
 # AGREGAR RESEÑAS
 @app.route('/agregar_resena/<int:producto_id>', methods=['POST'])
 def agregar_resena(producto_id):
@@ -584,6 +572,8 @@ def eliminar_categoria(id):
     cur.close()
     flash('Categoría eliminada', 'success')
     return redirect(url_for('admin_categorias'))
+
+
 
 
 # ==============================

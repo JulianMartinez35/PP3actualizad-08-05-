@@ -19,6 +19,7 @@
                 </tr>
             </thead>
             <tbody>
+                
                 {% for item in items %}
                 <tr>
                     <td>{{ item.nombre }}</td>
@@ -45,6 +46,7 @@
                 </tr>
             </tbody>
         </table>
+        
     {% else %}
         <p class="text-center mt-5">Tu carrito está vacío.</p>
     {% endif %}
