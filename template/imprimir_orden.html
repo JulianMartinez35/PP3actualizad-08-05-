@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Orden de Compra #{{ venta.id }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h2, h3 {
+            margin-bottom: 10px;
+        }
+        .info {
+            margin-bottom: 25px;
+        }
+        .info p {
+            margin: 5px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            font-size: 14px;
+        }
+        th {
+            background-color: #f8f8f8;
+            text-align: left;
+        }
+        .btn-print {
+            margin-top: 30px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h2>Orden de Compra #{{ venta.id }}</h2>
+
+    <div class="info">
+        <p><strong>Correo del cliente:</strong> {{ venta.cliente }}</p>
+        <p><strong>Nombre:</strong> {{ venta.nombre_cliente }}</p>
+        <p><strong>Dirección de envío:</strong> {{ venta.direccion_envio }}</p>
+        <p><strong>Fecha:</strong> {{ venta.fecha }}</p>
+        <p><strong>Estado de pago:</strong> {{ venta.estado_pago }} | <strong>Estado de envío:</strong> {{ venta.estado_envio }}</p>
+    </div>
+
+    <h3>Detalles del pedido</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Color</th>
+                <th>Talle</th>
+                <th>Cantidad</th>
+                <th>Precio unitario</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for detalle in detalles %}
+                {% if detalle.id_venta == venta.id %}
+                <tr>
+                    <td>{{ detalle.producto }}</td>
+                    <td>{{ detalle.color }}</td>
+                    <td>{{ detalle.talle }}</td>
+                    <td>{{ detalle.cantidad }}</td>
+                    <td>${{ "{:,.2f}".format(detalle.precio_unitario).replace(',', '.') }}</td>
+                    <td>${{ "{:,.2f}".format(detalle.precio_unitario * detalle.cantidad).replace(',', '.') }}</td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h3>Total: ${{ "{:,.2f}".format(venta.total).replace(',', '.') }}</h3>
+
+    <button onclick="window.print()" class="btn-print">Imprimir Orden</button>
+</body>
+</html>
+

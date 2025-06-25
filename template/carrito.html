@@ -19,14 +19,19 @@
                 </tr>
             </thead>
             <tbody>
-                
                 {% for item in items %}
                 <tr>
                     <td>{{ item.nombre }}</td>
                     <td>
                         <img src="{{ url_for('static', filename='imagenes_productos/' ~ item.imagen) }}" width="50">
                     </td>
-                    <td>{{ item.cantidad }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('actualizar_cantidad_carrito') }}" class="d-flex align-items-center">
+                            <input type="hidden" name="id" value="{{ item.id }}">
+                            <input type="number" name="cantidad" value="{{ item.cantidad }}" min="1" max="{{ item.stock }}" class="form-control form-control-sm me-2" style="width: 70px;">
+                            <button type="submit" class="btn btn-sm btn-primary">Actualizar</button>
+                        </form>
+                    </td>
                     <td>$ {{ "{:,.0f}".format(item.precio).replace(",", ".") }}</td>
                     <td>{{ item.talle }}</td>
                     <td>{{ item.color }}</td>
@@ -46,6 +51,11 @@
                 </tr>
             </tbody>
         </table>
+
+        <!-- Botón de pago o checkout -->
+        <div class="text-end mt-3">
+            <a href="{{ url_for('checkout') }}" class="btn btn-success btn">INICIAR COMPRA</a>
+        </div>
         
     {% else %}
         <p class="text-center mt-5">Tu carrito está vacío.</p>

@@ -1,0 +1,42 @@
+{% include "usuariocabecera.html" %}
+
+<div class="container my-5">
+    <h2 class="mb-4">Checkout</h2>
+
+    <h4>Resumen de compra</h4>
+    <ul>
+        {% for item in items %}
+        <li>{{ item.nombre }} x {{ item.cantidad }} - ${{ item.precio * item.cantidad }}</li>
+        {% endfor %}
+    </ul>
+    <p><strong>Total: ${{ total }}</strong></p>
+
+    <form method="POST" action="{{ url_for('checkout') }}">
+        <div class="mb-3">
+            <label for="nombre" class="form-label">Nombre completo</label>
+            <input
+                type="text"
+                class="form-control"
+                id="nombre"
+                name="nombre"
+                value="{{ usuario.nombre if usuario and usuario.nombre else '' }}"
+                required
+            >
+        </div>
+
+        <div class="mb-3">
+            <label for="direccion" class="form-label">Dirección de envío</label>
+            <textarea
+                class="form-control"
+                id="direccion"
+                name="direccion"
+                rows="3"
+                required
+            >{{ usuario.direccion if usuario and usuario.direccion else '' }}</textarea>
+        </div>
+
+        <!-- Aquí puedes agregar más campos: tarjeta, teléfono, etc -->
+
+        <button type="submit" class="btn btn-success">Confirmar compra</button>
+    </form>
+</div>

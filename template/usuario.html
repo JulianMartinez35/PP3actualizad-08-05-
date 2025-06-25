@@ -7,7 +7,6 @@
         {% for producto in productos %}
         <div class="col">
             <div class="card h-100 border-0 shadow-sm rounded-4">
-                <!-- Imagen del producto con trigger para modal -->
                 <div class="d-flex justify-content-center align-items-center bg-white rounded-top" style="height: 420px;">
                     <img src="{{ url_for('static', filename='imagenes_productos/' ~ producto.imagen) }}"
                          class="img-fluid p-2"
@@ -16,57 +15,50 @@
                          data-bs-toggle="modal" data-bs-target="#modalImagen{{ producto.id }}">
                 </div>
 
-                <!-- Información del producto -->
                 <div class="card-body d-flex flex-column">
                     <h5 class="card-title text-uppercase fw-bold">{{ producto.nombre }}</h5>
                     <p class="card-text small text-muted">{{ producto.descripcion }}</p>
-
                     <p class="mb-1"><strong>Precio:</strong> ${{ "{:,.0f}".format(producto.precio).replace(",", ".") }}</p>
-                    <p>
-                        <strong>Stock:</strong>
-                        {% if producto.stock > 0 %}
-                            {{ producto.stock }} disponibles
-                        {% else %}
-                            <span class="text-danger">Sin stock</span>
-                        {% endif %}
-                    </p>
 
-                    {% if producto.stock > 0 %}
+                    {% if producto.variantes %}
                     <form action="{{ url_for('agregar_carrito', id_producto=producto.id) }}" method="POST" class="mt-auto">
-                        <!-- Talle -->
                         <div class="mb-2">
-                            <label for="talle_{{ producto.id }}" class="form-label"><strong>Talle:</strong></label>
-                            <select name="talle" id="talle_{{ producto.id }}" class="form-select form-select-sm" required>
-                                {% for talle in producto.talles %}
-                                    <option value="{{ talle }}">{{ talle }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <!-- Color -->
-                        <div class="mb-2">
-                            <label for="color_{{ producto.id }}" class="form-label"><strong>Color:</strong></label>
-                            <select name="color" id="color_{{ producto.id }}" class="form-select form-select-sm" required>
-                                {% for color in producto.colores %}
+                            <label class="form-label"><strong>Color:</strong></label>
+                            <select class="form-select form-select-sm color-select" data-producto="{{ producto.id }}">
+                                <option value="">Elegí un color</option>
+                                {% for color in producto.variantes | map(attribute='color') | unique %}
                                     <option value="{{ color }}">{{ color }}</option>
                                 {% endfor %}
                             </select>
                         </div>
 
-                        <!-- Cantidad y botón -->
+                        <div class="mb-2">
+                            <label class="form-label"><strong>Talle:</strong></label>
+                            <select class="form-select form-select-sm talle-select" data-producto="{{ producto.id }}">
+                                <option value="">Elegí un talle</option>
+                                {% for talle in producto.variantes | map(attribute='talle') | unique %}
+                                    <option value="{{ talle }}">{{ talle }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <input type="hidden" name="variante_id" class="variante-id" data-producto="{{ producto.id }}" required>
+                        <p class="stock-text text-muted mb-2" id="stockText{{ producto.id }}"></p>
+
                         <div class="input-group mb-2">
-                            <input type="number" name="cantidad" class="form-control form-control-sm" value="1" min="1" max="{{ producto.stock }}" required>
-                            <button type="submit" class="btn btn-success btn-sm">Agregar al carrito</button>
+                            <input type="number" name="cantidad" class="form-control form-control-sm" value="0" min="1" required>
+                            <button type="submit" class="btn btn-success btn-sm" disabled >Agregar al carrito</button>
                         </div>
                     </form>
                     {% else %}
+                    <p><strong>Stock:</strong> <span class="text-danger">Sin stock disponible</span></p>
                     <button class="btn btn-secondary w-100 mt-auto" disabled>Sin stock</button>
                     {% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- Modal para imagen ampliada y reseñas -->
+        <!-- Modal de imagen y reseñas -->
         <div class="modal fade" id="modalImagen{{ producto.id }}" tabindex="-1" aria-labelledby="modalLabel{{ producto.id }}" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content">
@@ -75,12 +67,10 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                     </div>
                     <div class="modal-body d-flex flex-column align-items-center">
-                        <!-- Imagen -->
                         <img src="{{ url_for('static', filename='imagenes_productos/' ~ producto.imagen) }}"
                              class="img-fluid mb-3"
                              alt="Imagen ampliada del producto {{ producto.nombre }}">
 
-                        <!-- Reseñas -->
                         <div class="w-100 mt-3">
                             <h6 class="fw-bold">Reseñas:</h6>
                             {% if producto.resenas %}
@@ -89,11 +79,8 @@
                                         <div class="border-bottom pb-2 mb-2">
                                             <strong class="text-primary">{{ reseña.correo }}</strong>
                                             <span class="text-warning">
-                                                {% for i in range(reseña.puntuacion) %}
-                                                    ★
-                                                {% endfor %}
+                                                {% for i in range(reseña.puntuacion) %}★{% endfor %}
                                             </span>
-                                            
                                             <p class="mb-1">{{ reseña.comentario }}</p>
                                         </div>
                                     {% endfor %}
@@ -103,28 +90,46 @@
                             {% endif %}
                         </div>
 
-                        <!-- Formulario de reseña -->
                         {% if session.get('logueado') %}
                         <form method="POST" action="{{ url_for('agregar_resena', producto_id=producto.id) }}" class="w-100">
+
+                            <style>
+                                .rating {
+                                    direction: rtl;
+                                    unicode-bidi: bidi-override;
+                                    display: inline-flex;
+                                    font-size: 1.5rem;
+                                }
+                                .rating input {
+                                    display: none;
+                                }
+                                .rating label {
+                                    color: #ccc;
+                                    cursor: pointer;
+                                    transition: color 0.2s;
+                                }
+                                .rating label:hover,
+                                .rating label:hover ~ label,
+                                .rating input:checked ~ label {
+                                    color: #ffc107;
+                                }
+                            </style>
+
                             <div class="mb-2">
                                 <label class="form-label">Puntuación:</label>
-                                <div class="d-flex flex-column gap-1">
-                                    {% for i in range(1, 6) %}
-                                        <div class="form-check d-flex align-items-center">
-                                            <input class="form-check-input me-2" type="radio" name="puntuacion" id="estrella{{ i }}_{{ producto.id }}" value="{{ i }}" required>
-                                            <label class="form-check-label text-warning mb-0" for="estrella{{ i }}_{{ producto.id }}">
-                                                {% for j in range(1, i + 1) %}
-                                                    ★
-                                                {% endfor %}
-                                            </label>
-                                        </div>
+                                <div class="rating mb-2">
+                                    {% for i in range(5, 0, -1) %}
+                                        <input type="radio" name="puntuacion" id="estrella{{ i }}_{{ producto.id }}" value="{{ i }}" required>
+                                        <label for="estrella{{ i }}_{{ producto.id }}">★</label>
                                     {% endfor %}
                                 </div>
                             </div>
+
                             <div class="mb-2">
                                 <label class="form-label">Comentario:</label>
                                 <textarea name="comentario" class="form-control form-control-sm" rows="2" required></textarea>
                             </div>
+
                             <button type="submit" class="btn btn-primary btn-sm">Enviar reseña</button>
                         </form>
                         {% else %}
@@ -137,3 +142,66 @@
         {% endfor %}
     </div>
 </div>
+
+<!-- Script de variantes -->
+<script>
+    const productos = {{ lista_productos | tojson | safe }};
+
+    function actualizarVariante(productoId) {
+        const color = document.querySelector(`.color-select[data-producto="${productoId}"]`).value;
+        const talle = document.querySelector(`.talle-select[data-producto="${productoId}"]`).value;
+        const stockText = document.getElementById(`stockText${productoId}`);
+        const inputVariante = document.querySelector(`.variante-id[data-producto="${productoId}"]`);
+        const form = inputVariante.closest('form');
+        const botonAgregar = form.querySelector('button[type="submit"]');
+        const inputCantidad = form.querySelector('input[name="cantidad"]');
+
+        if (color && talle) {
+            const producto = productos.find(p => p.id === productoId);
+            const variante = producto?.variantes?.find(v => v.color === color && v.talle === talle);
+
+            if (variante) {
+                stockText.textContent = `Stock disponible: ${variante.stock}`;
+                inputVariante.value = variante.id;
+
+                if (variante.stock > 0) {
+                    botonAgregar.disabled = false;
+                    inputCantidad.disabled = false;
+                    inputCantidad.max = variante.stock;
+                    inputCantidad.min = 1;
+                    inputCantidad.value = 1;
+                } else {
+                    botonAgregar.disabled = true;
+                    inputCantidad.disabled = true;
+                    inputCantidad.value = 0;
+                    stockText.textContent += ' (No hay stock)';
+                }
+            } else {
+                stockText.textContent = "No disponible para esa combinación";
+                inputVariante.value = "";
+                botonAgregar.disabled = true;
+                inputCantidad.disabled = true;
+                inputCantidad.value = 0;
+            }
+        } else {
+            stockText.textContent = "";
+            inputVariante.value = "";
+            botonAgregar.disabled = true;
+            inputCantidad.disabled = true;
+            inputCantidad.value = 0;
+        }
+    }
+
+    document.querySelectorAll('.color-select, .talle-select').forEach(select => {
+        select.addEventListener('change', function () {
+            const productoId = parseInt(this.dataset.producto);
+            actualizarVariante(productoId);
+        });
+    });
+
+    // Inicializar estados al cargar página (desactivar botones)
+    document.querySelectorAll('form').forEach(form => {
+        const productoId = parseInt(form.querySelector('.variante-id').dataset.producto);
+        actualizarVariante(productoId);
+    });
+</script>

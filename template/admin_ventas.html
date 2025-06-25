@@ -1,0 +1,51 @@
+{% include 'admincabecera.html' %}
+
+<div class="container my-5">
+    <h2 class="mb-4">Listado de Ventas</h2>
+
+    {% if ventas %}
+    <div class="accordion" id="accordionVentas">
+        {% for venta in ventas %}
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="heading{{ venta.id }}">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ venta.id }}" aria-expanded="false" aria-controls="collapse{{ venta.id }}">
+                    Venta #{{ venta.id }} - ${{ "{:,.2f}".format(venta.total).replace(',', '.') }} - {{ venta.fecha }}
+                </button>
+            </h2>
+            <div id="collapse{{ venta.id }}" class="accordion-collapse collapse" aria-labelledby="heading{{ venta.id }}" data-bs-parent="#accordionVentas">
+                <div class="accordion-body">
+                    <p><strong>Correo:</strong> {{ venta.cliente }}<br>
+                    <strong>Nombre:</strong> {{ venta.nombre_cliente }}<br>
+                    <strong>Dirección:</strong> {{ venta.direccion_envio }}<br>
+                    <strong>Estado pago:</strong> {{ venta.estado_pago }} | <strong>Estado envío:</strong> {{ venta.estado_envio }}</p>
+
+                    <h6>Detalles:</h6>
+                    <ul>
+                        {% for detalle in detalles %}
+                            {% if detalle.id_venta == venta.id %}
+                            <li>
+                                {{ detalle.producto }} ({{ detalle.color }} - {{ detalle.talle }}) - 
+                                x{{ detalle.cantidad }} - ${{ "{:,.2f}".format(detalle.precio_unitario).replace(',', '.') }}
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+
+                    <button class="btn btn-outline-primary" onclick="imprimirOrden('{{ venta.id }}')">Imprimir Orden</button>
+
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>No hay ventas registradas.</p>
+    {% endif %}
+</div>
+
+<script>
+function imprimirOrden(idVenta) {
+    // Abrir una nueva ventana con la URL para imprimir la orden
+    window.open('/imprimir_orden/' + idVenta, '_blank', 'width=800,height=600');
+}
+</script>
