@@ -1,7 +1,87 @@
+
 {% include "usuariocabecera.html" %}
 
 <div class="container my-5">
-    <h2>Formas de Pago</h2>
+    <h2 class="mb-4">Formas de Pago</h2>
     <p>Seleccioná tu método de pago para completar la compra.</p>
-    <!-- Aquí ponés botones o formularios para tarjeta, transferencia, etc -->
+
+    <div class="accordion" id="accordionPago">
+
+        <!-- Pago con tarjeta -->
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingTarjeta">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTarjeta">
+                    Tarjeta de crédito / débito
+                </button>
+            </h2>
+            <div id="collapseTarjeta" class="accordion-collapse collapse show" data-bs-parent="#accordionPago">
+                <div class="accordion-body">
+                    <form action="{{ url_for('confirmar_pago') }}" method="POST">
+                        <div class="mb-3">
+                            <label for="numero_tarjeta" class="form-label">Número de tarjeta</label>
+                            <input type="text" class="form-control" name="numero_tarjeta" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="titular" class="form-label">Nombre del titular</label>
+                            <input type="text" class="form-control" name="titular" required>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label for="vencimiento" class="form-label">Vencimiento</label>
+                                <input type="text" class="form-control" name="vencimiento" placeholder="MM/AA" required>
+                            </div>
+                            <div class="col">
+                                <label for="cvv" class="form-label">CVV</label>
+                                <input type="text" class="form-control" name="cvv" required>
+                            </div>
+                        </div>
+                        <input type="hidden" name="metodo_pago" value="tarjeta">
+                        <button type="submit" class="btn btn-success">Pagar con tarjeta</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transferencia bancaria -->
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingTransferencia">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTransferencia">
+                    Transferencia bancaria
+                </button>
+            </h2>
+            <div id="collapseTransferencia" class="accordion-collapse collapse" data-bs-parent="#accordionPago">
+                <div class="accordion-body">
+                    <p>Realizá la transferencia a la siguiente cuenta:</p>
+                    <ul>
+                        <li><strong>Alias:</strong> innovachic.tienda</li>
+                        <li><strong>CBU:</strong> 0000003100000000001234</li>
+                        <li><strong>Banco:</strong> Banco Nación</li>
+                    </ul>
+                    <form action="{{ url_for('confirmar_pago') }}" method="POST">
+                        <input type="hidden" name="metodo_pago" value="transferencia">
+                        <button type="submit" class="btn btn-success">Confirmar transferencia</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pago en efectivo -->
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingEfectivo">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEfectivo">
+                    Pago en efectivo
+                </button>
+            </h2>
+            <div id="collapseEfectivo" class="accordion-collapse collapse" data-bs-parent="#accordionPago">
+                <div class="accordion-body">
+                    <p>Podés abonar al momento de recibir el pedido o retirarlo por nuestra sucursal.</p>
+                    <form action="{{ url_for('confirmar_pago') }}" method="POST">
+                        <input type="hidden" name="metodo_pago" value="efectivo">
+                        <button type="submit" class="btn btn-success">Confirmar pago en efectivo</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
 </div>

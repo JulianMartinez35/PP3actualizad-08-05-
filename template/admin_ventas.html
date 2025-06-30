@@ -4,11 +4,14 @@
     <h2 class="mb-4">Listado de Ventas</h2>
 
     {% if ventas %}
+    <button id="btnImprimirSeleccionados" class="btn btn-success mb-3" onclick="imprimirSeleccionados()">Imprimir Seleccionados</button>
+
     <div class="accordion" id="accordionVentas">
         {% for venta in ventas %}
         <div class="accordion-item">
-            <h2 class="accordion-header" id="heading{{ venta.id }}">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ venta.id }}" aria-expanded="false" aria-controls="collapse{{ venta.id }}">
+            <h2 class="accordion-header d-flex align-items-center" id="heading{{ venta.id }}">
+                <input type="checkbox" class="checkbox-venta me-2" data-id="{{ venta.id }}">
+                <button class="accordion-button collapsed flex-grow-1" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ venta.id }}" aria-expanded="false" aria-controls="collapse{{ venta.id }}">
                     Venta #{{ venta.id }} - ${{ "{:,.2f}".format(venta.total).replace(',', '.') }} - {{ venta.fecha }}
                 </button>
             </h2>
@@ -17,6 +20,9 @@
                     <p><strong>Correo:</strong> {{ venta.cliente }}<br>
                     <strong>Nombre:</strong> {{ venta.nombre_cliente }}<br>
                     <strong>Dirección:</strong> {{ venta.direccion_envio }}<br>
+                    <strong>Código Postal:</strong> {{ venta.codigo_postal }}<br>
+                    <strong>Celular:</strong> {{ venta.celular }}<br>
+                    <strong>Tipo de envío:</strong> {{ venta.tipo_envio }}<br>
                     <strong>Estado pago:</strong> {{ venta.estado_pago }} | <strong>Estado envío:</strong> {{ venta.estado_envio }}</p>
 
                     <h6>Detalles:</h6>
@@ -45,7 +51,17 @@
 
 <script>
 function imprimirOrden(idVenta) {
-    // Abrir una nueva ventana con la URL para imprimir la orden
     window.open('/imprimir_orden/' + idVenta, '_blank', 'width=800,height=600');
+}
+
+function imprimirSeleccionados() {
+    const checkboxes = document.querySelectorAll('.checkbox-venta:checked');
+    if (checkboxes.length === 0) {
+        alert('Por favor, selecciona al menos una venta para imprimir.');
+        return;
+    }
+
+    const ids = Array.from(checkboxes).map(chk => chk.getAttribute('data-id')).join(',');
+    window.open('/imprimir_ordenes?ids=' + ids, '_blank', 'width=900,height=700');
 }
 </script>

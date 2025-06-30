@@ -1,16 +1,76 @@
 {% include "usuariocabecera.html" %}
 
+<style>
+    .card-producto {
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        display: flex;
+        align-items: center;
+        padding: 12px;
+        background-color: #fff;
+    }
+
+    .card-producto img {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 10px;
+        margin-right: 15px;
+    }
+
+    .resumen-total {
+        font-size: 20px;
+        font-weight: bold;
+        color: #2c3e50;
+        text-align: right;
+        margin-top: 15px;
+    }
+
+    .form-control {
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .btn-success {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 16px;
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: #444;
+    }
+
+    .form-check-label {
+        font-weight: normal;
+    }
+</style>
+
 <div class="container my-5">
-    <h2 class="mb-4">Checkout</h2>
+    <h2 class="mb-4 text-center">Datos para la Entrega</h2>
 
-    <h4>Resumen de compra</h4>
-    <ul>
+    <!-- Resumen de Compra -->
+    <div class="mb-4">
+        <h4>Resumen de compra</h4>
         {% for item in items %}
-        <li>{{ item.nombre }} x {{ item.cantidad }} - ${{ item.precio * item.cantidad }}</li>
+        <div class="card-producto">
+            <img src="{{ url_for('static', filename='imagenes_productos/' ~ item.imagen) }}" alt="{{ item.nombre }}">
+            <div>
+                <h6 class="mb-1">{{ item.nombre }}</h6>
+                <p class="mb-0">Cantidad: {{ item.cantidad }}</p>
+                <p class="mb-0">Subtotal: ${{ item.precio * item.cantidad }}</p>
+            </div>
+        </div>
         {% endfor %}
-    </ul>
-    <p><strong>Total: ${{ total }}</strong></p>
+        <p class="resumen-total">Total: ${{ total }}</p>
+    </div>
 
+    <!-- Formulario de Envío -->
     <form method="POST" action="{{ url_for('checkout') }}">
         <div class="mb-3">
             <label for="nombre" class="form-label">Nombre completo</label>
@@ -25,18 +85,52 @@
         </div>
 
         <div class="mb-3">
-            <label for="direccion" class="form-label">Dirección de envío</label>
+            <label for="direccion" class="form-label">Dirección</label>
             <textarea
                 class="form-control"
                 id="direccion"
                 name="direccion"
-                rows="3"
+                rows="2"
                 required
             >{{ usuario.direccion if usuario and usuario.direccion else '' }}</textarea>
         </div>
 
-        <!-- Aquí puedes agregar más campos: tarjeta, teléfono, etc -->
+        <div class="mb-3">
+            <label for="codigo_postal" class="form-label">Código Postal</label>
+            <input
+                type="text"
+                class="form-control"
+                id="codigo_postal"
+                name="codigo_postal"
+                required
+            >
+        </div>
 
-        <button type="submit" class="btn btn-success">Confirmar compra</button>
+        <div class="mb-3">
+            <label for="celular" class="form-label">Celular / WhatsApp</label>
+            <input
+                type="tel"
+                class="form-control"
+                id="celular"
+                name="celular"
+                required
+            >
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label">Método de entrega</label>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="envio" id="envio_domicilio" value="domicilio" checked>
+                <label class="form-check-label" for="envio_domicilio">Envío a domicilio</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="envio" id="envio_sucursal" value="sucursal">
+                <label class="form-check-label" for="envio_sucursal">Retiro en sucursal</label>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <button type="submit" class="btn btn-success">Confirmar compra</button>
+        </div>
     </form>
 </div>

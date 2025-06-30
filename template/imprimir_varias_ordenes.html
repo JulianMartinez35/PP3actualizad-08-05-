@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8" />
-    <title>Orden de Compra #{{ venta.id }}</title>
+    <title>Imprimir Órdenes Seleccionadas</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -31,15 +31,15 @@
             background-color: #f8f8f8;
             text-align: left;
         }
-        .btn-print {
-            margin-top: 30px;
-            padding: 8px 16px;
-            font-size: 14px;
-            cursor: pointer;
+        .orden {
+            page-break-after: always;
         }
     </style>
 </head>
 <body>
+
+{% for venta in ventas %}
+<div class="orden">
     <h2>Orden de Compra #{{ venta.id }}</h2>
 
     <div class="info">
@@ -82,7 +82,14 @@
     </table>
 
     <h3>Total: ${{ "{:,.2f}".format(venta.total).replace(',', '.') }}</h3>
+</div>
+{% endfor %}
 
-    <button onclick="window.print()" class="btn-print">Imprimir Orden</button>
+<script>
+    window.onload = function() {
+        window.print();
+    };
+</script>
+
 </body>
 </html>

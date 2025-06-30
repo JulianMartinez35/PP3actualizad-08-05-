@@ -6,10 +6,13 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_mysqldb import MySQL, MySQLdb
 import os
+import mercadopago
 from werkzeug.utils import secure_filename
 from MySQLdb.cursors import DictCursor
 from datetime import datetime
 
+# API MERCADO PAGO
+sdk = mercadopago.SDK("TEST-4940082616299576-062713-5c203cb9f66156b5006eaa48b8e62e5d-1196059720")
 
 
 
@@ -186,21 +189,19 @@ def usuario():
 
         # Filtrar productos según la categoría si se seleccionó alguna
         if categoria_id:
-            cursor.execute("SELECT * FROM productos WHERE categoria_id = %s", (categoria_id,))
+            cursor.execute("SELECT * FROM productos WHERE categoria_id = %s ORDER BY id DESC", (categoria_id,))
         else:
-            cursor.execute("SELECT * FROM productos")
+            cursor.execute("SELECT * FROM productos ORDER BY id DESC")
         productos = cursor.fetchall()
 
         lista_productos = []
         for producto in productos:
             # Obtener variantes para este producto
-            cursor.execute("""
-                SELECT * FROM variantes_producto WHERE producto_id = %s
-            """, (producto['id'],))
+            cursor.execute("SELECT * FROM variantes_producto WHERE producto_id = %s", (producto['id'],))
             variantes = cursor.fetchall()
-            producto['variantes'] = variantes  # se agregan las variantes al producto
+            producto['variantes'] = variantes
 
-            # Obtener reseñas para este producto
+            # Obtener reseñas
             cursor.execute("""
                 SELECT r.comentario, r.puntuacion, u.correo, r.fecha
                 FROM resenas r
@@ -224,6 +225,7 @@ def usuario():
         )
 
     return redirect(url_for('home'))
+
 
 # =============================
 # CERRAR SESIÓN
@@ -418,7 +420,7 @@ def actualizar_cantidad_carrito():
 def admin_productos():
     if 'logueado' in session and session['id_rol'] == 1:
         cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cur.execute("SELECT * FROM productos")
+        cur.execute("SELECT * FROM productos ORDER BY id DESC")  # <--- Aquí el ORDER BY DESC
         productos = cur.fetchall()
 
         for producto in productos:
@@ -435,7 +437,6 @@ def admin_productos():
         cur.close()
         return render_template('admin_productos.html', productos=productos)
     return redirect(url_for('home'))
-
 
 
  
@@ -675,9 +676,9 @@ def calcular_total_carrito(items):
 def checkout():
     if 'logueado' in session and session['id_rol'] == 2:
         id_usuario = session['id']
-        cur = mysql.connection.cursor()
-        
-        # Obtener carrito y calcular total
+        cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+
+        # Obtener productos del carrito
         cur.execute("""
             SELECT c.id, p.id AS id_producto, v.id AS id_variante, p.nombre, p.precio, p.imagen, 
                    c.cantidad, v.color, v.talle, v.stock
@@ -692,28 +693,44 @@ def checkout():
         if request.method == 'POST':
             nombre = request.form['nombre']
             direccion = request.form['direccion']
+            codigo_postal = request.form['codigo_postal']
+            celular = request.form['celular']
+            envio = request.form['envio']  # "domicilio" o "sucursal"
 
-            # Actualizar nombre y direccion en usuarios
+            # Actualizar datos del usuario
             cur.execute("""
-                UPDATE usuarios SET nombre = %s, direccion = %s WHERE id = %s
+                UPDATE usuarios 
+                SET nombre = %s, direccion = %s 
+                WHERE id = %s
             """, (nombre, direccion, id_usuario))
 
-            # Insertar en tabla ventas
+            # Registrar venta (estado pendiente)
             cur.execute("""
-                INSERT INTO ventas (id_usuario, nombre_cliente, direccion_envio, total)
-                VALUES (%s, %s, %s, %s)
-            """, (id_usuario, nombre, direccion, total))
+                INSERT INTO ventas (
+                    id_usuario, nombre_cliente, direccion_envio, total, estado_pago, estado_envio,
+                    codigo_postal, celular, tipo_envio
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                id_usuario, nombre, direccion, total, "pendiente", "pendiente",
+                codigo_postal, celular, envio
+            ))
             id_venta = cur.lastrowid
 
-            # Insertar detalle venta y actualizar stock
+            # Insertar detalle y actualizar stock
             for item in items:
                 cur.execute("""
-                    INSERT INTO detalle_venta (id_venta, id_producto, id_variante, cantidad, precio_unitario)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (id_venta, item['id_producto'], item['id_variante'], item['cantidad'], item['precio']))
-                
+                    INSERT INTO detalle_venta (
+                        id_venta, id_producto, id_variante, cantidad, precio_unitario
+                    ) VALUES (%s, %s, %s, %s, %s)
+                """, (
+                    id_venta, item['id_producto'], item['id_variante'],
+                    item['cantidad'], item['precio']
+                ))
                 cur.execute("""
-                    UPDATE variantes_producto SET stock = stock - %s WHERE id = %s
+                    UPDATE variantes_producto
+                    SET stock = stock - %s
+                    WHERE id = %s
                 """, (item['cantidad'], item['id_variante']))
 
             # Vaciar carrito
@@ -721,17 +738,71 @@ def checkout():
             mysql.connection.commit()
             cur.close()
 
-            flash("¡Compra realizada con éxito!", "success")
-            return redirect(url_for('formas_pago'))
+            # ✅ Generar preferencia Mercado Pago (SIN auto_return)
+            preference_data = {
+                "items": [
+                    {
+                        "title": item['nombre'],
+                        "quantity": int(item['cantidad']),
+                        "unit_price": float(item['precio']),
+                        "currency_id": "ARS"
+                    } for item in items
+                ],
+                "back_urls": {
+                    "success": f"http://localhost:5000/pago_exitoso?id_venta={id_venta}",
+                    "failure": f"http://localhost:5000/pago_fallido?id_venta={id_venta}",
+                    "pending": f"http://localhost:5000/pago_pendiente?id_venta={id_venta}"
+                }
+            }
+
+            import pprint
+            preference = sdk.preference().create(preference_data)
+            pprint.pprint(preference)
+
+            if preference.get("status") == 201 and "init_point" in preference["response"]:
+                return redirect(preference["response"]["init_point"])
+            else:
+                print("❌ ERROR: Preferencia NO generada correctamente:")
+                pprint.pprint(preference)
+                flash("No se pudo generar el link de pago. Verificá los datos o credenciales.", "danger")
+                return redirect(url_for('checkout'))
 
         else:
-            # GET: obtener datos guardados para precargar el formulario
+            # GET → precargar datos del usuario
             cur.execute("SELECT nombre, direccion FROM usuarios WHERE id = %s", (id_usuario,))
             usuario = cur.fetchone()
             cur.close()
-
             return render_template('checkout.html', items=items, total=total, usuario=usuario)
+
     return redirect(url_for('login'))
+
+
+#PAGO EXITOSO
+@app.route('/pago_exitoso')
+def pago_exitoso():
+    id_venta = request.args.get('id_venta')
+    cur = mysql.connection.cursor()
+    cur.execute("""
+        UPDATE ventas
+        SET estado_pago = 'aprobado', estado_envio = 'preparando'
+        WHERE id = %s
+    """, (id_venta,))
+    mysql.connection.commit()
+    cur.close()
+    flash("¡Pago aprobado con éxito!", "success")
+    return redirect(url_for('usuario_inicio'))  # Ajustá la redirección según tu sitio
+
+@app.route('/pago_fallido')
+def pago_fallido():
+    id_venta = request.args.get('id_venta')
+    flash("El pago fue rechazado. Podés intentarlo nuevamente desde tus pedidos.", "danger")
+    return redirect(url_for('usuario_inicio'))
+
+@app.route('/pago_pendiente')
+def pago_pendiente():
+    id_venta = request.args.get('id_venta')
+    flash("Tu pago está pendiente. Te notificaremos cuando se acredite.", "info")
+    return redirect(url_for('usuario_inicio'))
 
 # ==============================
 # ADMINISTRADOR DE VENTAS
@@ -741,10 +812,11 @@ def admin_ventas():
     if 'logueado' in session and session['id_rol'] == 1:
         cur = mysql.connection.cursor()
 
-        # Obtener todas las ventas
+        # Obtener todas las ventas (ahora incluyendo código postal, celular y tipo de envío)
         cur.execute("""
-            SELECT v.id, u.correo AS cliente, v.nombre_cliente, v.direccion_envio, v.total, v.fecha, 
-                   v.estado_pago, v.estado_envio
+            SELECT v.id, u.correo AS cliente, v.nombre_cliente, v.direccion_envio,
+                   v.codigo_postal, v.celular, v.tipo_envio,
+                   v.total, v.fecha, v.estado_pago, v.estado_envio
             FROM ventas v
             JOIN usuarios u ON v.id_usuario = u.id
             ORDER BY v.fecha DESC
@@ -765,6 +837,7 @@ def admin_ventas():
 
         return render_template('admin_ventas.html', ventas=ventas, detalles=detalles)
     return redirect(url_for('login'))
+
 # ==============================
 # IMPRIMIR ORDEN
 # ==============================
@@ -798,6 +871,50 @@ def imprimir_orden(id_venta):
 
     return render_template('imprimir_orden.html', venta=venta, detalles=detalles)
 
+#IMPRIMIR VARIAS ORDENES
+
+@app.route('/imprimir_ordenes')
+def imprimir_ordenes():
+    ids = request.args.get('ids')
+    if not ids:
+        return "No se recibieron IDs de ventas", 400
+
+    try:
+        ids_ventas = [int(idv) for idv in ids.split(',')]
+    except ValueError:
+        return "IDs inválidos", 400
+
+    cur = mysql.connection.cursor()
+
+    format_strings = ','.join(['%s'] * len(ids_ventas))
+
+    # Obtener ventas
+    cur.execute(f"""
+        SELECT v.*, u.correo AS cliente
+        FROM ventas v
+        JOIN usuarios u ON v.id_usuario = u.id
+        WHERE v.id IN ({format_strings})
+    """, tuple(ids_ventas))
+    ventas = cur.fetchall()
+
+    # Obtener detalles con producto + color + talle
+    cur.execute(f"""
+        SELECT dv.id_venta, dv.cantidad, dv.precio_unitario,
+               p.nombre AS producto, vp.color, vp.talle
+        FROM detalle_venta dv
+        JOIN productos p ON dv.id_producto = p.id
+        JOIN variantes_producto vp ON dv.id_variante = vp.id
+        WHERE dv.id_venta IN ({format_strings})
+    """, tuple(ids_ventas))
+    detalles = cur.fetchall()
+
+    cur.close()
+
+    if not ventas:
+        return "No se encontraron ventas con esos IDs", 404
+
+    return render_template('imprimir_varias_ordenes.html', ventas=ventas, detalles=detalles)
+
 
 # ==============================
 # FORMAS DE PAGO
@@ -806,6 +923,17 @@ def imprimir_orden(id_venta):
 def formas_pago():
     # Podés pasar datos si querés, o solo renderizar la vista
     return render_template('formas_pago.html')
+
+#CONFIRMAR PAGO
+@app.route('/confirmar_pago', methods=['POST'])
+def confirmar_pago():
+    metodo = request.form['metodo_pago']
+
+    # Acá podés registrar en la base de datos el método seleccionado
+    # Ejemplo: UPDATE ventas SET metodo_pago = %s WHERE id = última_venta_del_usuario
+
+    flash(f"Pago confirmado por {metodo}. ¡Gracias por tu compra!", "success")
+    return redirect(url_for('usuario'))  # o donde quieras llevarlo después del pago
 
 
 # ==============================
