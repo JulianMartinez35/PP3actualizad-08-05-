@@ -12,7 +12,7 @@ from MySQLdb.cursors import DictCursor
 from datetime import datetime
 
 # API MERCADO PAGO
-sdk = mercadopago.SDK("TEST-4940082616299576-062713-5c203cb9f66156b5006eaa48b8e62e5d-1196059720")
+sdk = mercadopago.SDK("TEST-5434778544108455-063007-e73a9a2bdbc519a7d09a1698cd7bce1b-1196059720")
 
 
 
@@ -196,8 +196,8 @@ def usuario():
 
         lista_productos = []
         for producto in productos:
-            # Obtener variantes para este producto
-            cursor.execute("SELECT * FROM variantes_producto WHERE producto_id = %s", (producto['id'],))
+            # Obtener sólo variantes activas para este producto
+            cursor.execute("SELECT * FROM variantes_producto WHERE producto_id = %s AND activa = 1", (producto['id'],))
             variantes = cursor.fetchall()
             producto['variantes'] = variantes
 
@@ -225,6 +225,7 @@ def usuario():
         )
 
     return redirect(url_for('home'))
+
 
 
 # =============================
@@ -350,17 +351,18 @@ def ver_carrito():
                    v.color, v.talle, v.stock
             FROM carrito c
             JOIN productos p ON c.id_producto = p.id
-            JOIN variantes_producto v ON c.id_variante = v.id
+            LEFT JOIN variantes_producto v ON c.id_variante = v.id
             WHERE c.id_usuario = %s
         """, (id_usuario,))
         items = cur.fetchall()
         cur.close()
 
-        total = sum(item['precio'] * item['cantidad'] for item in items)
+        total = sum(item['precio'] * item['cantidad'] for item in items if item['precio'])
         total_cantidad = sum(item['cantidad'] for item in items)
 
         return render_template('carrito.html', items=items, total=total, total_cantidad=total_cantidad)
     return redirect(url_for('login'))
+
 
 
 
@@ -424,19 +426,21 @@ def admin_productos():
         productos = cur.fetchall()
 
         for producto in productos:
-            # Obtener variantes
+            # Obtener variantes activas solamente
             cur.execute("""
-                SELECT color, talle, stock FROM variantes_producto WHERE producto_id = %s
+                SELECT color, talle, stock FROM variantes_producto 
+                WHERE producto_id = %s AND activa = 1
             """, (producto['id'],))
             variantes = cur.fetchall()
             producto['variantes'] = variantes
 
-            # Calcular stock total (suma de todas las variantes)
+            # Calcular stock total (suma de todas las variantes activas)
             producto['stock_total'] = sum(variante['stock'] for variante in variantes) if variantes else 0
 
         cur.close()
         return render_template('admin_productos.html', productos=productos)
     return redirect(url_for('home'))
+
 
 
  
@@ -452,10 +456,26 @@ def editar_producto(id):
         precio = float(request.form['precio'])
         categoria_id = request.form['categoria_id']
 
-        # Obtener variantes del formulario (arrays)
+        # Obtener arrays del formulario
         colores = request.form.getlist('color[]')
         talles = request.form.getlist('talle[]')
         stocks = request.form.getlist('stock_variante[]')
+        ids_variantes = request.form.getlist('id_variante[]')  # puede venir vacío
+
+        # Convertir a set de IDs para comparaciones
+        ids_variantes_en_form = set(int(idv) for idv in ids_variantes if idv.strip().isdigit())
+
+        # 🧠 Obtener todas las variantes actuales del producto
+        cur.execute("SELECT id FROM variantes_producto WHERE producto_id = %s", (id,))
+        ids_variantes_en_bd = set(row['id'] for row in cur.fetchall())
+
+        # 🔄 Marcar como inactivas las variantes que estaban antes pero no están en el form
+        ids_para_deshabilitar = ids_variantes_en_bd - ids_variantes_en_form
+        if ids_para_deshabilitar:
+            cur.execute(
+                "UPDATE variantes_producto SET activa = 0 WHERE id IN %s",
+                (tuple(ids_para_deshabilitar),)
+            )
 
         # Manejo de imagen
         cur.execute("SELECT imagen FROM productos WHERE id = %s", (id,))
@@ -477,23 +497,33 @@ def editar_producto(id):
         else:
             imagen_a_guardar = imagen_actual
 
-        # 🔄 Actualizar producto sin campos de variantes
+        # 🔄 Actualizar producto
         cur.execute("""
             UPDATE productos
             SET nombre=%s, descripcion=%s, precio=%s, imagen=%s, categoria_id=%s
             WHERE id=%s
         """, (nombre, descripcion, precio, imagen_a_guardar, categoria_id, id))
 
-        # 🧹 Borrar variantes anteriores
-        cur.execute("DELETE FROM variantes_producto WHERE producto_id = %s", (id,))
+        # 💾 Insertar o actualizar variantes
+        for idx in range(len(colores)):
+            color = colores[idx].strip()
+            talle = talles[idx].strip()
+            stock = int(stocks[idx])
+            id_variante = ids_variantes[idx] if idx < len(ids_variantes) else None
 
-        # 💾 Insertar nuevas variantes
-        for color, talle, stock in zip(colores, talles, stocks):
-            if color and talle and stock:
+            if id_variante and id_variante.strip().isdigit():
+                # Variante ya existente → actualizar
                 cur.execute("""
-                    INSERT INTO variantes_producto (producto_id, color, talle, stock)
-                    VALUES (%s, %s, %s, %s)
-                """, (id, color.strip(), talle.strip(), int(stock)))
+                    UPDATE variantes_producto
+                    SET color=%s, talle=%s, stock=%s, activa=1
+                    WHERE id=%s
+                """, (color, talle, stock, int(id_variante)))
+            else:
+                # Nueva variante
+                cur.execute("""
+                    INSERT INTO variantes_producto (producto_id, color, talle, stock, activa)
+                    VALUES (%s, %s, %s, %s, 1)
+                """, (id, color, talle, stock))
 
         mysql.connection.commit()
         cur.close()
@@ -506,8 +536,8 @@ def editar_producto(id):
         if not producto:
             return "Producto no encontrado", 404
 
-        # Obtener variantes
-        cur.execute("SELECT * FROM variantes_producto WHERE producto_id = %s", (id,))
+        # Obtener variantes (todas, incluso inactivas si querés mostrar en historial)
+        cur.execute("SELECT * FROM variantes_producto WHERE producto_id = %s AND activa = 1", (id,))
         variantes = cur.fetchall()
 
         # Obtener categorías
@@ -522,10 +552,11 @@ def editar_producto(id):
             'precio': producto["precio"],
             'imagen': producto["imagen"],
             'categoria_id': producto["categoria_id"],
-            'variantes': variantes  # para editarlas visualmente
+            'variantes': variantes
         }
 
         return render_template('editar_producto.html', producto=producto_dict, categorias=categorias)
+
 
 
 
@@ -688,6 +719,11 @@ def checkout():
             WHERE c.id_usuario = %s
         """, (id_usuario,))
         items = cur.fetchall()
+
+        if not items:
+            flash("Tu carrito está vacío. Agregá productos antes de continuar.", "warning")
+            return redirect(url_for('usuario_inicio'))
+
         total = sum(item['precio'] * item['cantidad'] for item in items)
 
         if request.method == 'POST':
@@ -697,14 +733,14 @@ def checkout():
             celular = request.form['celular']
             envio = request.form['envio']  # "domicilio" o "sucursal"
 
-            # Actualizar datos del usuario
+            # 🔁 ACTUALIZAR todos los datos del usuario
             cur.execute("""
                 UPDATE usuarios 
-                SET nombre = %s, direccion = %s 
+                SET nombre = %s, direccion = %s, codigo_postal = %s, celular = %s
                 WHERE id = %s
-            """, (nombre, direccion, id_usuario))
+            """, (nombre, direccion, codigo_postal, celular, id_usuario))
 
-            # Registrar venta (estado pendiente)
+            # Insertar venta
             cur.execute("""
                 INSERT INTO ventas (
                     id_usuario, nombre_cliente, direccion_envio, total, estado_pago, estado_envio,
@@ -717,7 +753,6 @@ def checkout():
             ))
             id_venta = cur.lastrowid
 
-            # Insertar detalle y actualizar stock
             for item in items:
                 cur.execute("""
                     INSERT INTO detalle_venta (
@@ -727,18 +762,15 @@ def checkout():
                     id_venta, item['id_producto'], item['id_variante'],
                     item['cantidad'], item['precio']
                 ))
+
+                # Descontar stock
                 cur.execute("""
                     UPDATE variantes_producto
                     SET stock = stock - %s
                     WHERE id = %s
                 """, (item['cantidad'], item['id_variante']))
 
-            # Vaciar carrito
-            cur.execute("DELETE FROM carrito WHERE id_usuario = %s", (id_usuario,))
-            mysql.connection.commit()
-            cur.close()
-
-            # ✅ Generar preferencia Mercado Pago (SIN auto_return)
+            # Generar preferencia Mercado Pago
             preference_data = {
                 "items": [
                     {
@@ -755,26 +787,27 @@ def checkout():
                 }
             }
 
-            import pprint
             preference = sdk.preference().create(preference_data)
-            pprint.pprint(preference)
 
             if preference.get("status") == 201 and "init_point" in preference["response"]:
+                # Vaciar carrito
+                cur.execute("DELETE FROM carrito WHERE id_usuario = %s", (id_usuario,))
+                mysql.connection.commit()
+                cur.close()
                 return redirect(preference["response"]["init_point"])
             else:
-                print("❌ ERROR: Preferencia NO generada correctamente:")
-                pprint.pprint(preference)
                 flash("No se pudo generar el link de pago. Verificá los datos o credenciales.", "danger")
                 return redirect(url_for('checkout'))
 
         else:
-            # GET → precargar datos del usuario
-            cur.execute("SELECT nombre, direccion FROM usuarios WHERE id = %s", (id_usuario,))
+            # GET → precargar todos los campos del usuario
+            cur.execute("SELECT nombre, direccion, codigo_postal, celular FROM usuarios WHERE id = %s", (id_usuario,))
             usuario = cur.fetchone()
             cur.close()
             return render_template('checkout.html', items=items, total=total, usuario=usuario)
 
     return redirect(url_for('login'))
+
 
 
 #PAGO EXITOSO
@@ -914,26 +947,6 @@ def imprimir_ordenes():
         return "No se encontraron ventas con esos IDs", 404
 
     return render_template('imprimir_varias_ordenes.html', ventas=ventas, detalles=detalles)
-
-
-# ==============================
-# FORMAS DE PAGO
-# ==============================
-@app.route('/formas_pago')
-def formas_pago():
-    # Podés pasar datos si querés, o solo renderizar la vista
-    return render_template('formas_pago.html')
-
-#CONFIRMAR PAGO
-@app.route('/confirmar_pago', methods=['POST'])
-def confirmar_pago():
-    metodo = request.form['metodo_pago']
-
-    # Acá podés registrar en la base de datos el método seleccionado
-    # Ejemplo: UPDATE ventas SET metodo_pago = %s WHERE id = última_venta_del_usuario
-
-    flash(f"Pago confirmado por {metodo}. ¡Gracias por tu compra!", "success")
-    return redirect(url_for('usuario'))  # o donde quieras llevarlo después del pago
 
 
 # ==============================

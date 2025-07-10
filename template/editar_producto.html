@@ -49,6 +49,7 @@
             <div id="variantes-container">
               {% for variante in producto.variantes %}
               <div class="row g-2 mb-2 variante">
+                <input type="hidden" name="id_variante[]" value="{{ variante.id }}">
                 <div class="col-md-4">
                   <input type="text" name="color[]" class="form-control form-control-sm" placeholder="Color" value="{{ variante.color }}" required>
                 </div>
