@@ -238,6 +238,15 @@ def logout():
     return redirect(url_for('home'))
 
 # CARGAR PRODUCTOS
+@app.route('/formulario-cargar-producto')
+def cargar_producto_formulario():
+    if 'logueado' in session and session['id_rol'] == 1:
+        cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        cur.execute("SELECT * FROM categorias")
+        categorias = cur.fetchall()
+        cur.close()
+        return render_template('formulario_carga_producto.html', categorias=categorias)
+    return redirect(url_for('login'))
 
 # Carpeta para subir imágenes
 UPLOAD_FOLDER = 'static/imagenes_productos'
@@ -265,22 +274,23 @@ def cargar_producto():
         """, (nombre, descripcion, precio, filename, categoria_id))
         producto_id = cur.lastrowid
 
-        # Insertar variantes
+        # Insertar variantes con activa = 1
         colores = request.form.getlist('color[]')
         talles = request.form.getlist('talle[]')
         stocks = request.form.getlist('stock_variante[]')
 
         for c, t, s in zip(colores, talles, stocks):
             cur.execute("""
-                INSERT INTO variantes_producto (producto_id, color, talle, stock)
-                VALUES (%s, %s, %s, %s)
-            """, (producto_id, c.strip(), t.strip(), int(s)))
+                INSERT INTO variantes_producto (producto_id, color, talle, stock, activa)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (producto_id, c.strip(), t.strip(), int(s), 1))
 
         mysql.connection.commit()
         cur.close()
         
         return redirect(url_for('admin'))
     return redirect(url_for('home'))
+
 
 
 #AGREGAR CARRITO

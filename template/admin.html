@@ -1,87 +1,22 @@
 {% include 'admincabecera.html' %}
 
 <div class="container my-5">
-    <h2 class="text-center text-uppercase mb-4">Cargar nuevo producto</h2>
-
     <div class="row justify-content-center">
-        <div class="col-12 col-md-6 col-lg-5">
-            <form action="{{ url_for('cargar_producto') }}" method="POST" enctype="multipart/form-data" class="p-4 shadow rounded-4 bg-light">
-                
-                <div class="mb-3">
-                    <label for="nombre" class="form-label">Nombre</label>
-                    <input type="text" id="nombre" name="nombre" class="form-control" required>
-                </div>
+        <div class="col-md-8 col-lg-6">
 
-                <div class="mb-3">
-                    <label for="descripcion" class="form-label">Descripción</label>
-                    <textarea id="descripcion" name="descripcion" class="form-control" rows="3" required></textarea>
-                </div>
+            <div class="card shadow rounded-4 border-0">
+                <div class="card-body text-center py-5 bg-light rounded-4">
+                    <h2 class="card-title text-uppercase fw-bold mb-3">Panel de Administración</h2>
+                    <p class="card-text text-muted fs-5">Bienvenido, administrador. Desde aquí podrás gestionar tu tienda.</p>
 
-                <div class="mb-3">
-                    <label for="precio" class="form-label">Precio</label>
-                    <input type="number" id="precio" name="precio" step="0.01" class="form-control" min="0" required>
-                </div>
+                    <hr class="my-4">
 
-                <!-- Campo de categoría -->
-                <div class="mb-3">
-                    <label for="categoria" class="form-label">Categoría</label>
-                    <select name="categoria_id" id="categoria" class="form-select" required>
-                        {% for categoria in categorias %}
-                            <option value="{{ categoria.id }}">{{ categoria.nombre }}</option>
-                        {% endfor %}
-                    </select>
+                    <a href="{{ url_for('cargar_producto_formulario') }}" class="btn btn-outline-primary btn-lg rounded-pill px-4">
+                        <i class="bi bi-plus-circle me-2"></i> Cargar nuevo producto
+                    </a>
                 </div>
+            </div>
 
-                <!-- VARIANTES -->
-                <hr>
-                <h5 class="text-center text-uppercase">Variantes</h5>
-                <div id="variantes-container" class="mb-3">
-                    <div class="variante row g-2 mb-2">
-                        <div class="col">
-                            <input type="text" name="color[]" class="form-control" placeholder="Color" required>
-                        </div>
-                        <div class="col">
-                            <input type="text" name="talle[]" class="form-control" placeholder="Talle" required>
-                        </div>
-                        <div class="col">
-                            <input type="number" name="stock_variante[]" class="form-control" placeholder="Stock" min="0" required>
-                        </div>
-                    </div>
-                </div>
-                <div class="mb-3 text-end">
-                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill" onclick="agregarVariante()">+ Agregar variante</button>
-                </div>
-
-                <!-- Imagen -->
-                <div class="mb-3">
-                    <label for="imagen" class="form-label">Imagen del producto</label>
-                    <input type="file" id="imagen" name="imagen" accept="image/*" class="form-control" required>
-                </div>
-
-                <div class="text-end">
-                    <button type="submit" class="btn btn-dark rounded-pill">Cargar producto</button>
-                </div>
-            </form>
         </div>
     </div>
 </div>
-
-<script>
-function agregarVariante() {
-    const container = document.getElementById('variantes-container');
-    const nueva = document.createElement('div');
-    nueva.className = 'variante row g-2 mb-2';
-    nueva.innerHTML = `
-        <div class="col">
-            <input type="text" name="color[]" class="form-control" placeholder="Color" required>
-        </div>
-        <div class="col">
-            <input type="text" name="talle[]" class="form-control" placeholder="Talle" required>
-        </div>
-        <div class="col">
-            <input type="number" name="stock_variante[]" class="form-control" placeholder="Stock" min="0" required>
-        </div>
-    `;
-    container.appendChild(nueva);
-}
-</script>
