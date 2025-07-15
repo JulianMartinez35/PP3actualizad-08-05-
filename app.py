@@ -12,7 +12,7 @@ from MySQLdb.cursors import DictCursor
 from datetime import datetime
 
 # API MERCADO PAGO
-sdk = mercadopago.SDK("TEST-5434778544108455-063007-e73a9a2bdbc519a7d09a1698cd7bce1b-1196059720")
+sdk = mercadopago.SDK("TEST-4940082616299576-062713-5c203cb9f66156b5006eaa48b8e62e5d-1196059720")
 
 
 
@@ -345,10 +345,10 @@ def agregar_carrito(id_producto):
 def ver_carrito():
     if 'logueado' in session and session['id_rol'] == 2:
         id_usuario = session['id']
-        cur = mysql.connection.cursor()
+        cur = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cur.execute("""
             SELECT c.id, p.nombre, p.precio, p.imagen, c.cantidad,
-                   v.color, v.talle, v.stock
+                   v.color, v.talle, v.stock, v.activa
             FROM carrito c
             JOIN productos p ON c.id_producto = p.id
             LEFT JOIN variantes_producto v ON c.id_variante = v.id
@@ -360,8 +360,14 @@ def ver_carrito():
         total = sum(item['precio'] * item['cantidad'] for item in items if item['precio'])
         total_cantidad = sum(item['cantidad'] for item in items)
 
-        return render_template('carrito.html', items=items, total=total, total_cantidad=total_cantidad)
+        # Verificamos si hay alguna variante con stock 0 o inactiva
+        hay_producto_inactivo = any(item['stock'] == 0 or not item['activa'] for item in items)
+
+        return render_template('carrito.html', items=items, total=total,
+                               total_cantidad=total_cantidad,
+                               hay_producto_inactivo=hay_producto_inactivo)
     return redirect(url_for('login'))
+
 
 
 
